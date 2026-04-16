@@ -18,14 +18,13 @@ SRC = ROOT / "src"
 project = "oas2mcp"
 copyright = "2026, pr1m8"
 author = "pr1m8"
-release = "0.1.0"
+release = "0.1.1"
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
 extensions = [
     "sphinx.ext.napoleon",
-    "sphinx.ext.intersphinx",
     "sphinx.ext.viewcode",
     "sphinx.ext.linkcode",
     "sphinx.ext.graphviz",
@@ -54,11 +53,6 @@ language = "en"
 napoleon_google_docstring = True
 napoleon_numpy_docstring = False
 
-intersphinx_mapping = {
-    "python": ("https://docs.python.org/3", None),
-    "pydantic": ("https://docs.pydantic.dev/latest/", None),
-}
-
 myst_enable_extensions = [
     "colon_fence",
     "deflist",
@@ -72,7 +66,7 @@ copybutton_remove_prompts = True
 autoapi_type = "python"
 autoapi_dirs = [str(SRC / "oas2mcp")]
 autoapi_root = "autoapi"
-autoapi_keep_files = True
+autoapi_keep_files = False
 autoapi_add_toctree_entry = False
 autoapi_member_order = "groupwise"
 autoapi_python_class_content = "class"
@@ -94,7 +88,7 @@ autoapi_ignore = [
 html_theme = "furo"
 html_title = "oas2mcp"
 html_static_path = ["_static"]
-html_css_files = ["custom.css"]
+html_css_files = ["custom_css.css"]
 
 html_theme_options = {
     "sidebar_hide_name": False,

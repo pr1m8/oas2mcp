@@ -167,6 +167,7 @@ pdm run pytest
 Run the strict docs build:
 
 ```bash
+rm -rf docs/source/autoapi docs/_build
 pdm run sphinx-build -b html -W --keep-going docs/source docs/_build/html
 ```
 

@@ -18,7 +18,7 @@ oas2mcp
       Install the package, point it at an OpenAPI spec, and generate output quickly.
 
    .. grid-item-card:: API Reference
-      :link: autoapi/index
+      :link: autoapi/oas2mcp/index
       :link-type: doc
 
       Browse the full generated API reference for the package.
@@ -64,7 +64,7 @@ Highlights
    :maxdepth: 2
    :hidden:
 
-   autoapi/index
+   autoapi/oas2mcp/index
    quickstart
    architecture
    examples

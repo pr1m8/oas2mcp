@@ -38,7 +38,9 @@ jobs:
         env:
           LANG: C.UTF-8
           LC_ALL: C.UTF-8
-        run: pdm run sphinx-build -b html -W --keep-going docs/source docs/_build/html
+        run: |
+          rm -rf docs/source/autoapi docs/_build
+          pdm run sphinx-build -b html -W --keep-going docs/source docs/_build/html
 
       - name: Upload documentation artifact
         uses: actions/upload-artifact@v4
