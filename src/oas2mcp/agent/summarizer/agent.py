@@ -9,7 +9,7 @@ Design:
     - Keep summarizer-specific prompt building and context assembly local to
       this submodule.
     - Return structured output aligned with ``CatalogSummary``.
-    - Use LangChain built-in todo middleware plus dynamic prompt middleware.
+    - Use dynamic prompt middleware for runtime-aware summarization behavior.
 
 Examples:
     .. code-block:: python
@@ -23,8 +23,6 @@ Examples:
 from __future__ import annotations
 
 from typing import Any
-
-from langchain.agents.middleware.todo import TodoListMiddleware
 
 from oas2mcp.agent.base import (
     DEFAULT_MODEL_NAME,
@@ -64,7 +62,6 @@ def build_catalog_summarizer_agent(
             is set.
     """
     builtins: list[Any] = [
-        TodoListMiddleware(),
         build_catalog_summary_dynamic_prompt(),
     ]
 
@@ -99,17 +96,16 @@ def run_catalog_summarizer(
 
     Raises:
         RuntimeError: If the default OpenAI-backed model is used and no API key
-            is set.
-        KeyError: If the LangChain result does not include ``structured_response``.
+            is set, or if no structured response is returned.
     """
     bundle = classify_catalog(catalog)
     summary_context = build_catalog_summary_context(catalog, bundle=bundle)
-    agent = build_catalog_summarizer_agent(
+    summarizer_agent = build_catalog_summarizer_agent(
         model=model,
         middleware=middleware,
     )
 
-    result = agent.invoke(
+    result = summarizer_agent.invoke(
         {
             "messages": [
                 {
@@ -120,4 +116,8 @@ def run_catalog_summarizer(
         },
         context=runtime_context,
     )
-    return result["structured_response"]
+
+    structured_response = result.get("structured_response")
+    if structured_response is None:
+        raise RuntimeError("Catalog summarizer did not return a structured_response.")
+    return structured_response

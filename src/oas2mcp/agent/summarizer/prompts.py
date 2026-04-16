@@ -1,7 +1,7 @@
 """Prompt builders for the catalog summarizer agent.
 
 Purpose:
-    Build the prompt text used by the first catalog-level summarizer agent.
+    Build the prompt text used by the catalog-level summarizer agent.
 
 Design:
     - Keep prompt construction deterministic.
@@ -9,6 +9,8 @@ Design:
     - Align the prompt with the ``CatalogSummary`` structured output model.
     - Use LangChain v1 dynamic prompt middleware for runtime-aware system
       instructions.
+    - Prioritize conceptual understanding of the API before operational or
+      implementation detail.
 
 Examples:
     .. code-block:: python
@@ -28,40 +30,78 @@ from oas2mcp.agent.summarizer.context import CatalogSummaryContext
 
 
 def build_catalog_summary_system_prompt() -> str:
-    """Build the base system prompt for the catalog summarizer agent."""
+    """Build the base system prompt for the catalog summarizer agent.
+
+    Args:
+        None.
+
+    Returns:
+        The system prompt string.
+
+    Raises:
+        None.
+
+    Examples:
+        .. code-block:: python
+
+            prompt = build_catalog_summary_system_prompt()
+    """
     return """You are an API analysis assistant.
 
-Your job is to summarize a normalized OpenAPI-derived API catalog for MCP planning.
+Your job is to summarize a normalized OpenAPI-derived API catalog at a high level.
 
-You will receive compact structured context about:
-- the API's identity and description
-- domains and tags
-- read, mutating, and destructive operation patterns
-- security schemes
-- schema reference rollups
-- first-pass MCP candidate counts and examples
+Prioritize your summary in this order:
+1. Explain what the API is for overall.
+2. Explain its major domains and how they relate to each other.
+3. Explain its main data model and request/response patterns.
+4. Briefly summarize authentication requirements and notable operational caveats.
+5. Give only a short, high-level MCP framing.
 
-Produce a high-quality structured summary that:
-- explains the API's overall purpose clearly
-- identifies the main domains and what they do
-- summarizes authentication and security implications
-- summarizes read vs mutating vs destructive behavior
-- recommends a high-level MCP surface
-- suggests likely tool domains, resource domains, and prompt ideas
-- highlights important risks and operational notes
+Your summary must be grounded in the provided context and aligned with the CatalogSummary schema.
 
-Be concrete and concise.
-Do not invent capabilities that are not supported by the provided context.
-Prefer summarizing patterns over restating every operation individually.
+Important:
+- Focus on the shape, purpose, and conceptual structure of the API.
+- Do not let operational caveats dominate the summary.
+- Do not turn the response into a detailed implementation plan.
+- Do not provide endpoint-by-endpoint MCP mappings.
+- Do not generate prompt ideas, workflow recipes, or deployment instructions.
+- Do not enumerate every operation unless needed to explain a domain.
+- Prefer conceptual grouping over operational detail.
+- Keep suggested tool/resource domains short and broad.
+- Keep the MCP framing concise and high-level.
+- Keep notes short and conceptual.
+- Do not invent capabilities or deployment assumptions not supported by the provided context.
 """
 
 
 def build_catalog_summary_dynamic_prompt():
-    """Build dynamic prompt middleware for the catalog summarizer."""
+    """Build dynamic prompt middleware for the catalog summarizer.
+
+    Returns:
+        The LangChain dynamic prompt middleware callable.
+
+    Raises:
+        None.
+
+    Examples:
+        .. code-block:: python
+
+            middleware = build_catalog_summary_dynamic_prompt()
+    """
 
     @dynamic_prompt
     def _dynamic_prompt(request) -> str:
-        """Return the runtime-aware system prompt."""
+        """Return the runtime-aware system prompt.
+
+        Args:
+            request: The LangChain middleware request object.
+
+        Returns:
+            The runtime-aware system prompt.
+
+        Raises:
+            None.
+        """
         runtime = request.runtime.context
 
         base = build_catalog_summary_system_prompt()
@@ -70,15 +110,23 @@ def build_catalog_summary_dynamic_prompt():
 
         lines: list[str] = []
         lines.append(f"Requested output style: {runtime.output_style}.")
+        lines.append(
+            "Focus first on conceptual understanding, then on light implementation implications."
+        )
+
         if runtime.include_mcp_recommendations:
-            lines.append("Include concrete MCP surface recommendations.")
+            lines.append(
+                "Include brief high-level MCP framing, but keep it clearly secondary to understanding the API."
+            )
         else:
-            lines.append("Keep MCP recommendations minimal.")
+            lines.append("Do not emphasize MCP framing.")
 
         if runtime.include_risk_notes:
-            lines.append("Include clear risk and confirmation guidance.")
+            lines.append(
+                "You may mention notable operational caveats briefly, but do not let them dominate the summary."
+            )
         else:
-            lines.append("Keep risk discussion brief.")
+            lines.append("Keep operational caveats minimal.")
 
         if runtime.project_name:
             lines.append(f"Project name: {runtime.project_name}")
@@ -95,7 +143,22 @@ def build_catalog_summary_dynamic_prompt():
 def build_catalog_summary_user_prompt(
     context: CatalogSummaryContext,
 ) -> str:
-    """Build the user prompt for the catalog summarizer agent."""
+    """Build the user prompt for the catalog summarizer agent.
+
+    Args:
+        context: The structured summarizer context.
+
+    Returns:
+        The user prompt string.
+
+    Raises:
+        None.
+
+    Examples:
+        .. code-block:: python
+
+            user_prompt = build_catalog_summary_user_prompt(context)
+    """
     serialized_context = json.dumps(
         context.model_dump(),
         indent=2,
@@ -103,7 +166,9 @@ def build_catalog_summary_user_prompt(
     )
 
     return (
-        "Summarize this API catalog for MCP planning.\n\n"
+        "Summarize this API catalog at a high level for later MCP-oriented design work.\n\n"
+        "Focus primarily on the API's purpose, conceptual structure, domains, data model, and data flow.\n"
+        "Treat authentication, operational caveats, and MCP implications as secondary supporting analysis.\n\n"
         "Return a structured summary aligned with the CatalogSummary model.\n\n"
         "Catalog summary context:\n"
         f"{serialized_context}"
