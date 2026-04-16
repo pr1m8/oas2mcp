@@ -2,23 +2,32 @@
 
 from __future__ import annotations
 
-from langchain.tools import ToolRuntime, tool
+from langchain.tools import tool
 
-from oas2mcp.agent.runtime import Oas2McpRuntimeContext
 from oas2mcp.agent.state import OpenApiEnhancementState
 
 
 @tool
-def list_remaining_operation_keys(
-    runtime: ToolRuntime[Oas2McpRuntimeContext, OpenApiEnhancementState],
-) -> list[str]:
-    """List operation keys that still need enhancement."""
-    return list(runtime.state.get("remaining_operation_keys", []))
+def list_remaining_operation_keys(state: OpenApiEnhancementState) -> list[str]:
+    """List operation keys that still need enhancement.
+
+    Args:
+        state: The current agent state.
+
+    Returns:
+        A list of remaining operation keys.
+    """
+    return list(state.get("remaining_operation_keys", []))
 
 
 @tool
-def get_current_operation_key(
-    runtime: ToolRuntime[Oas2McpRuntimeContext, OpenApiEnhancementState],
-) -> str | None:
-    """Return the current operation key being enhanced."""
-    return runtime.state.get("current_operation_key")
+def get_current_operation_key(state: OpenApiEnhancementState) -> str | None:
+    """Return the current operation key being enhanced.
+
+    Args:
+        state: The current agent state.
+
+    Returns:
+        The current operation key, if present.
+    """
+    return state.get("current_operation_key")
