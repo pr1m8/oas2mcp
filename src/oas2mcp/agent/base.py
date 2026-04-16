@@ -1,4 +1,26 @@
-"""Thin LangChain v1 agent factory helpers for ``oas2mcp``."""
+"""Thin LangChain v1 agent factory helpers for ``oas2mcp``.
+
+Purpose:
+    Provide shared helpers for constructing LangChain v1 agents and the default
+    OpenAI-backed chat model used by ``oas2mcp`` workflows.
+
+Design:
+    - Keep the wrapper intentionally thin.
+    - Centralize common defaults such as runtime context schema and state schema.
+    - Centralize default model construction, reasoning configuration, and
+      environment loading.
+    - Leave workflow-specific prompts, middleware, and structured outputs to
+      submodules like ``summarizer`` and ``enhancer``.
+
+Examples:
+    .. code-block:: python
+
+        model = build_default_chat_model()
+        agent = build_base_agent(
+            model=model,
+            response_format=MyOutputModel,
+        )
+"""
 
 from __future__ import annotations
 
@@ -18,15 +40,36 @@ DEFAULT_REASONING_EFFORT = "high"
 
 
 def load_project_env() -> None:
-    """Load likely project-local environment files."""
+    """Load likely project-local environment files.
+
+    Args:
+        None.
+
+    Returns:
+        None.
+
+    Raises:
+        None.
+    """
     load_dotenv()
+
     cwd_env = Path.cwd() / ".env"
     if cwd_env.exists():
         load_dotenv(cwd_env, override=False)
 
 
 def require_openai_api_key() -> str:
-    """Return the OpenAI API key from env."""
+    """Return the OpenAI API key from the environment.
+
+    Args:
+        None.
+
+    Returns:
+        str: The resolved API key.
+
+    Raises:
+        RuntimeError: If the key is not available.
+    """
     load_project_env()
     api_key = os.getenv("OPENAI_API_KEY")
     if not api_key:
@@ -43,8 +86,22 @@ def build_default_chat_model(
     api_key: str | None = None,
     **kwargs: Any,
 ) -> ChatOpenAI:
-    """Build the default OpenAI chat model."""
+    """Build the default OpenAI chat model.
+
+    Args:
+        model_name: The OpenAI model name.
+        reasoning_effort: The reasoning effort to request.
+        api_key: Optional OpenAI API key.
+        **kwargs: Extra keyword arguments forwarded to ``ChatOpenAI``.
+
+    Returns:
+        ChatOpenAI: Configured chat model.
+
+    Raises:
+        RuntimeError: If no API key is available.
+    """
     resolved_api_key = api_key or require_openai_api_key()
+
     return ChatOpenAI(
         model=model_name,
         api_key=resolved_api_key,
@@ -64,7 +121,24 @@ def build_base_agent(
     reasoning_effort: str = DEFAULT_REASONING_EFFORT,
     model_kwargs: dict[str, Any] | None = None,
 ):
-    """Build a stateful LangChain v1 agent for oas2mcp."""
+    """Build a stateful LangChain v1 agent for ``oas2mcp``.
+
+    Args:
+        response_format: Structured output schema or strategy.
+        tools: Optional tools.
+        middleware: Optional middleware stack.
+        system_prompt: Optional base system prompt.
+        model: Optional model instance or model identifier.
+        model_name: Default model name when ``model`` is omitted.
+        reasoning_effort: Default reasoning effort when ``model`` is omitted.
+        model_kwargs: Extra kwargs used only when building the default model.
+
+    Returns:
+        The constructed LangChain agent runnable.
+
+    Raises:
+        RuntimeError: If the default model is used and no API key is available.
+    """
     resolved_model = model or build_default_chat_model(
         model_name=model_name,
         reasoning_effort=reasoning_effort,
