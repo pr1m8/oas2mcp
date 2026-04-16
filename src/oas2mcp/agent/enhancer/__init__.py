@@ -1,8 +1,8 @@
 """Operation enhancer agent submodule for ``oas2mcp``.
 
 Purpose:
-    Provide structured models, deterministic context builders, tools, prompt
-    builders, and agent logic for the operation-level enhancer workflow.
+    Provide structured models, deterministic context builders, prompt builders,
+    and agent logic for the operation-level enhancer workflow.
 
 Design:
     - Keep enhancer-specific models and context isolated from summarizer logic.

@@ -10,6 +10,8 @@ Design:
       submodule.
     - Return structured output aligned with ``OperationEnhancement``.
     - Use dynamic prompt middleware and optional history summarization.
+    - Keep the first enhancer version tool-free because all required context is
+      already provided directly in the prompt payload.
 
 Examples:
     .. code-block:: python
@@ -35,16 +37,10 @@ from oas2mcp.agent.base import (
     build_base_agent,
 )
 from oas2mcp.agent.enhancer.context import build_operation_enhancement_context
-from oas2mcp.agent.enhancer.models import (
-    OperationEnhancement,
-)
+from oas2mcp.agent.enhancer.models import OperationEnhancement
 from oas2mcp.agent.enhancer.prompts import (
     build_operation_enhancer_dynamic_prompt,
     build_operation_enhancer_user_prompt,
-)
-from oas2mcp.agent.enhancer.tools import (
-    get_current_operation_key,
-    list_remaining_operation_keys,
 )
 from oas2mcp.agent.runtime import Oas2McpRuntimeContext
 from oas2mcp.agent.summarizer.models import CatalogSummary
@@ -91,10 +87,7 @@ def build_enhancer_agent(
         model=model,
         response_format=OperationEnhancement,
         middleware=[*builtins, *(middleware or [])],
-        tools=[
-            list_remaining_operation_keys,
-            get_current_operation_key,
-        ],
+        tools=[],
         system_prompt="",
         model_name=DEFAULT_ENHANCER_MODEL_NAME,
         reasoning_effort=DEFAULT_ENHANCER_REASONING_EFFORT,
