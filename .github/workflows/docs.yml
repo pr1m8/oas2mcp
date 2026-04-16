@@ -25,15 +25,10 @@ jobs:
         with:
           python-version: "3.13"
 
-      - name: Install PDM
-        uses: pdm-project/setup-pdm@v4
-        with:
-          version: "2.26.7"
-          python-version: "3.13"
-          cache: true
-
       - name: Install documentation dependencies
-        run: pdm install -G docs
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r docs/requirements.txt -e .
 
       - name: Build documentation
         env:
@@ -41,7 +36,7 @@ jobs:
           LC_ALL: C.UTF-8
         run: |
           rm -rf docs/source/autoapi docs/_build
-          pdm run sphinx-build -b html -W --keep-going docs/source docs/_build/html
+          sphinx-build -b html -W --keep-going docs/source docs/_build/html
 
       - name: Upload documentation artifact
         uses: actions/upload-artifact@v4
