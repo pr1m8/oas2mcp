@@ -1,79 +1,60 @@
-"""Structured models for the operation enhancer agent.
+"""Typed state definitions for ``oas2mcp`` agents.
 
 Purpose:
-    Define deterministic input and structured output models for refining one
-    normalized API operation into a more MCP-friendly representation.
+    Define the state carried through stateful OpenAPI enhancement workflows.
 
 Design:
-    - Keep these models specific to the enhancer workflow.
-    - Separate deterministic context objects from LLM-produced enhancement
-      outputs.
-    - Preserve enough detail for naming, auth, confirmation, and export.
+    - Use ``TypedDict`` because LangChain v1 custom agent state requires it.
+    - Keep the state centered on the source URL and progressively enriched API
+      understanding.
+    - Store deterministic catalog artifacts plus enhancer results so they can
+      later be exported into an enhanced spec/config surface.
 
 Examples:
     .. code-block:: python
 
-        enhancement = OperationEnhancement(
-            operation_key="POST /pet",
-            operation_slug="addpet",
-            final_kind="tool",
-            title="Create pet",
-            description="Create a new pet record.",
-            requires_confirmation=False,
-        )
+        state: OpenApiEnhancementState = {
+            "source_url": "https://example.com/openapi.json",
+        }
 """
 
 from __future__ import annotations
 
-from pydantic import Field
+from typing import NotRequired
 
-from oas2mcp.models.normalized import NormalizedBaseModel
-
-
-class ResolvedSchemaContext(NormalizedBaseModel):
-    """Resolved schema context for one schema reference."""
-
-    schema_ref: str
-    schema: dict = Field(default_factory=dict)
+from langchain.agents import AgentState
 
 
-class SecuritySchemeContext(NormalizedBaseModel):
-    """Compact security scheme details used by the enhancer."""
-
-    name: str
-    type: str
-    location: str | None = None
-    parameter_name: str | None = None
-    scheme: str | None = None
-    bearer_format: str | None = None
-    flow_names: list[str] = Field(default_factory=list)
-
-
-class EnhancementPromptCandidate(NormalizedBaseModel):
-    """Suggested prompt template for an enhanced operation."""
-
-    name: str
-    title: str
-    description: str
-    arguments: list[str] = Field(default_factory=list)
-
-
-class OperationEnhancement(NormalizedBaseModel):
-    """Structured enhancement result for one operation."""
+class OperationEnhancementRecord(AgentState):
+    """Serializable enhancer result stored in agent state."""
 
     operation_key: str
     operation_slug: str
-
     final_kind: str
-    namespace: str | None = None
     title: str
     description: str
+    requires_confirmation: bool
+    tool_name: str | None
+    resource_uri: str | None
+    notes: list[str]
 
-    tool_name: str | None = None
-    resource_uri: str | None = None
 
-    requires_confirmation: bool = False
-    auth_notes: str | None = None
+class OpenApiEnhancementState(AgentState):
+    """State carried through the OpenAPI enhancement workflow."""
 
-    prompt_templates: list[EnhancementPromptCandidate] = Field(default_factory=list)
-    notes: list[str] = Field(default_factory=list)
+    source_url: str
+
+    catalog: NotRequired[object]
+    candidate_bundle: NotRequired[object]
+    catalog_summary_context: NotRequired[object]
+    catalog_summary: NotRequired[object]
+
+    operation_keys: NotRequired[list[str]]
+    current_operation_key: NotRequired[str]
+    remaining_operation_keys: NotRequired[list[str]]
+
+    enhancement_todo: NotRequired[list[str]]
+    completed_steps: NotRequired[list[str]]
+
+    enhanced_operations: NotRequired[list[OperationEnhancementRecord]]
+    notes: NotRequired[list[str]]

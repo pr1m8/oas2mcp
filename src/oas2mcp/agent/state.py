@@ -4,12 +4,11 @@ Purpose:
     Define the state carried through stateful OpenAPI enhancement workflows.
 
 Design:
-    - Use ``TypedDict`` because LangChain v1 custom agent state is typed this
-      way.
-    - Keep the state centered on the source URL and the progressively enriched
-      understanding of the API.
+    - Use ``TypedDict`` because LangChain v1 custom agent state requires it.
+    - Keep the state centered on the source URL and progressively enriched API
+      understanding.
     - Store deterministic catalog artifacts plus enhancer results so they can
-      later be exported into a generated spec/config surface.
+      later be exported into an enhanced spec/config surface.
 
 Examples:
     .. code-block:: python
@@ -21,17 +20,12 @@ Examples:
 
 from __future__ import annotations
 
-from typing import NotRequired, TypedDict
+from typing import NotRequired
 
 from langchain.agents import AgentState
 
-from oas2mcp.agent.summarizer.context import CatalogSummaryContext
-from oas2mcp.agent.summarizer.models import CatalogSummary
-from oas2mcp.models.mcp import McpBundle
-from oas2mcp.models.normalized import ApiCatalog
 
-
-class OperationEnhancementRecord(TypedDict):
+class OperationEnhancementRecord(AgentState):
     """Serializable enhancer result stored in agent state."""
 
     operation_key: str
@@ -50,10 +44,10 @@ class OpenApiEnhancementState(AgentState):
 
     source_url: str
 
-    catalog: NotRequired[ApiCatalog]
-    candidate_bundle: NotRequired[McpBundle]
-    catalog_summary_context: NotRequired[CatalogSummaryContext]
-    catalog_summary: NotRequired[CatalogSummary]
+    catalog: NotRequired[object]
+    candidate_bundle: NotRequired[object]
+    catalog_summary_context: NotRequired[object]
+    catalog_summary: NotRequired[object]
 
     operation_keys: NotRequired[list[str]]
     current_operation_key: NotRequired[str]
