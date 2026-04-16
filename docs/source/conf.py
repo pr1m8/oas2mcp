@@ -81,7 +81,6 @@ autoapi_options = [
     "undoc-members",
     "show-inheritance",
     "show-module-summary",
-    "imported-members",
 ]
 autoapi_ignore = [
     "*migrations*",

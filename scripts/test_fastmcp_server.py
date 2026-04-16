@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from oas2mcp.generate.fastmcp_app import (
     build_fastmcp_from_exported_artifacts,
+    register_exported_prompts,
 )
 
 SOURCE_URI = "https://petstore3.swagger.io/api/v3/openapi.json"
@@ -16,6 +17,7 @@ def main() -> None:
         source_url=SOURCE_URI,
         fastmcp_config_path=FASTMCP_CONFIG_PATH,
     )
+    register_exported_prompts(mcp, FASTMCP_CONFIG_PATH)
     mcp.run(transport="http", port=8000)
 
 

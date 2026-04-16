@@ -1,8 +1,8 @@
 [project]
 name = "oas2mcp"
 version = "0.1.0"
-description = "Default template for PDM package"
-authors = [{ name = "Will", email = "you@example.com" }]
+description = "Turn OpenAPI specs into MCP-friendly catalogs, exports, and FastMCP bootstrap artifacts."
+authors = [{ name = "Will" }]
 dependencies = [
   "pydantic<3,>=2.12",
   "rich<16,>=15",
@@ -19,6 +19,22 @@ dependencies = [
 requires-python = ">=3.13"
 readme = "README.md"
 license = { text = "MIT" }
+keywords = ["openapi", "mcp", "fastmcp", "api", "codegen"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Software Development :: Code Generators",
+  "Topic :: Software Development :: Libraries :: Python Modules",
+]
+
+[project.urls]
+Homepage = "https://github.com/pr1m8/oas2mcp"
+Repository = "https://github.com/pr1m8/oas2mcp"
+Documentation = "https://oas2mcp.readthedocs.io/en/latest/"
+Issues = "https://github.com/pr1m8/oas2mcp/issues"
 
 [build-system]
 requires = ["pdm-backend"]
@@ -55,3 +71,7 @@ docs = [
   "sphinxcontrib-spelling>=8.0.2",
   "doc8>=2.0.0",
 ]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"

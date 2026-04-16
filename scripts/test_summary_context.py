@@ -16,7 +16,7 @@ Design:
 Examples:
     .. code-block:: bash
 
-        pdm run python scripts/test_catalog_summary_context.py
+        pdm run python scripts/test_summary_context.py
 """
 
 from __future__ import annotations

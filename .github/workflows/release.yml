@@ -1,0 +1,42 @@
+name: Release
+
+on:
+  release:
+    types:
+      - published
+  workflow_dispatch:
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    environment:
+      name: pypi
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install PDM
+        uses: pdm-project/setup-pdm@v4
+        with:
+          python-version: "3.13"
+          cache: true
+
+      - name: Install build dependencies
+        run: pdm sync -G test
+
+      - name: Run pytest
+        run: pdm run pytest
+
+      - name: Build distributions
+        run: pdm build
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1

@@ -29,6 +29,40 @@ from oas2mcp.agent.runtime import Oas2McpRuntimeContext
 from oas2mcp.agent.summarizer.context import CatalogSummaryContext
 
 
+def build_catalog_summary_runtime_instruction_lines(
+    runtime: Oas2McpRuntimeContext,
+) -> list[str]:
+    """Build deterministic runtime-specific instructions for summary prompts."""
+    lines: list[str] = []
+    lines.append(f"Requested output style: {runtime.output_style}.")
+    lines.append(
+        "Focus first on conceptual understanding, then on light implementation implications."
+    )
+
+    if runtime.include_mcp_recommendations:
+        lines.append(
+            "Include brief high-level MCP framing, but keep it clearly secondary to understanding the API."
+        )
+    else:
+        lines.append("Do not emphasize MCP framing.")
+
+    if runtime.include_risk_notes:
+        lines.append(
+            "You may mention notable operational caveats briefly, but do not let them dominate the summary."
+        )
+    else:
+        lines.append("Keep operational caveats minimal.")
+
+    if runtime.project_name:
+        lines.append(f"Project name: {runtime.project_name}")
+    if runtime.user_goal:
+        lines.append(f"User goal: {runtime.user_goal}")
+    if runtime.notes:
+        lines.append(f"Additional notes: {runtime.notes}")
+
+    return lines
+
+
 def build_catalog_summary_system_prompt() -> str:
     """Build the base system prompt for the catalog summarizer agent.
 
@@ -108,33 +142,7 @@ def build_catalog_summary_dynamic_prompt():
         if runtime is None or not isinstance(runtime, Oas2McpRuntimeContext):
             return base
 
-        lines: list[str] = []
-        lines.append(f"Requested output style: {runtime.output_style}.")
-        lines.append(
-            "Focus first on conceptual understanding, then on light implementation implications."
-        )
-
-        if runtime.include_mcp_recommendations:
-            lines.append(
-                "Include brief high-level MCP framing, but keep it clearly secondary to understanding the API."
-            )
-        else:
-            lines.append("Do not emphasize MCP framing.")
-
-        if runtime.include_risk_notes:
-            lines.append(
-                "You may mention notable operational caveats briefly, but do not let them dominate the summary."
-            )
-        else:
-            lines.append("Keep operational caveats minimal.")
-
-        if runtime.project_name:
-            lines.append(f"Project name: {runtime.project_name}")
-        if runtime.user_goal:
-            lines.append(f"User goal: {runtime.user_goal}")
-        if runtime.notes:
-            lines.append(f"Additional notes: {runtime.notes}")
-
+        lines = build_catalog_summary_runtime_instruction_lines(runtime)
         return base + "\nAdditional runtime instructions:\n- " + "\n- ".join(lines)
 
     return _dynamic_prompt

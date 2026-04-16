@@ -160,4 +160,6 @@ def run_operation_enhancer(
     structured_response = result.get("structured_response")
     if structured_response is None:
         raise RuntimeError("Operation enhancer did not return a structured_response.")
-    return structured_response
+    return structured_response.model_copy(
+        update={"operation_id": operation.operation_id}
+    )

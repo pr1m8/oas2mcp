@@ -11,7 +11,7 @@ Design:
 Examples:
     .. code-block:: python
 
-        python scripts/test_openapi.py
+        pdm run python scripts/test_openapi.py
 """
 
 from __future__ import annotations

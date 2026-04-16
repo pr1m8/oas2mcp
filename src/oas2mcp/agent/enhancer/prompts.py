@@ -29,6 +29,35 @@ from oas2mcp.agent.enhancer.models import OperationEnhancementContext
 from oas2mcp.agent.runtime import Oas2McpRuntimeContext
 
 
+def build_operation_enhancer_runtime_instruction_lines(
+    runtime: Oas2McpRuntimeContext,
+) -> list[str]:
+    """Build deterministic runtime-specific instructions for enhancer prompts."""
+    lines: list[str] = []
+    lines.append(f"Requested output style: {runtime.output_style}.")
+
+    if runtime.include_mcp_recommendations:
+        lines.append("Optimize the result for later MCP/OpenAPI export.")
+    else:
+        lines.append("Do not overemphasize MCP export details.")
+
+    if runtime.include_risk_notes:
+        lines.append(
+            "Mention confirmation and auth considerations briefly when relevant."
+        )
+    else:
+        lines.append("Keep confirmation and auth commentary minimal.")
+
+    if runtime.project_name:
+        lines.append(f"Project name: {runtime.project_name}")
+    if runtime.user_goal:
+        lines.append(f"User goal: {runtime.user_goal}")
+    if runtime.notes:
+        lines.append(f"Additional notes: {runtime.notes}")
+
+    return lines
+
+
 def build_operation_enhancer_system_prompt() -> str:
     """Build the base system prompt for the operation enhancer.
 
@@ -116,28 +145,7 @@ def build_operation_enhancer_dynamic_prompt():
         if runtime is None or not isinstance(runtime, Oas2McpRuntimeContext):
             return base
 
-        lines: list[str] = []
-        lines.append(f"Requested output style: {runtime.output_style}.")
-
-        if runtime.include_mcp_recommendations:
-            lines.append("Optimize the result for later MCP/OpenAPI export.")
-        else:
-            lines.append("Do not overemphasize MCP export details.")
-
-        if runtime.include_risk_notes:
-            lines.append(
-                "Mention confirmation and auth considerations briefly when relevant."
-            )
-        else:
-            lines.append("Keep confirmation and auth commentary minimal.")
-
-        if runtime.project_name:
-            lines.append(f"Project name: {runtime.project_name}")
-        if runtime.user_goal:
-            lines.append(f"User goal: {runtime.user_goal}")
-        if runtime.notes:
-            lines.append(f"Additional notes: {runtime.notes}")
-
+        lines = build_operation_enhancer_runtime_instruction_lines(runtime)
         return base + "\nAdditional runtime instructions:\n- " + "\n- ".join(lines)
 
     return _dynamic_prompt

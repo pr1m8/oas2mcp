@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlparse
 
 from oas2mcp.generate.config import ExportConfig
 from oas2mcp.generate.models import EnhancedCatalog
@@ -87,13 +88,13 @@ def export_enhanced_catalog_bundle(
 def build_fastmcp_name_map(
     enhanced_catalog: EnhancedCatalog,
 ) -> dict[str, str]:
-    """Build operation slug -> MCP name overrides.
+    """Build operationId -> FastMCP component-name overrides.
 
     Args:
         enhanced_catalog: The enhanced catalog.
 
     Returns:
-        dict[str, str]: Operation slug to chosen MCP-facing name mapping.
+        dict[str, str]: OpenAPI operationId to chosen FastMCP component name.
 
     Raises:
         None.
@@ -101,10 +102,9 @@ def build_fastmcp_name_map(
     mapping: dict[str, str] = {}
 
     for operation in enhanced_catalog.operations:
-        chosen_name = operation.tool_name or operation.resource_uri
-        if not chosen_name:
+        if not operation.operation_id:
             continue
-        mapping[operation.operation_slug] = chosen_name
+        mapping[operation.operation_id] = _derive_fastmcp_component_name(operation)
 
     return mapping
 
@@ -127,6 +127,7 @@ def build_operation_notes_map(
 
     for operation in enhanced_catalog.operations:
         result[operation.operation_slug] = {
+            "operation_id": operation.operation_id,
             "final_kind": operation.final_kind,
             "namespace": operation.namespace,
             "title": operation.title,
@@ -165,3 +166,18 @@ def build_fastmcp_config(
         "mcp_names": build_fastmcp_name_map(enhanced_catalog),
         "operations": build_operation_notes_map(enhanced_catalog),
     }
+
+
+def _derive_fastmcp_component_name(operation: Any) -> str:
+    """Choose a FastMCP-safe component name from exported operation metadata."""
+    if operation.tool_name:
+        return operation.tool_name
+
+    if operation.resource_uri:
+        parsed = urlparse(operation.resource_uri)
+        segments = [segment for segment in parsed.path.split("/") if segment]
+        for segment in reversed(segments):
+            if not segment.startswith("{"):
+                return segment
+
+    return operation.operation_slug

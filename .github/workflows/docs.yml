@@ -1,0 +1,47 @@
+name: Docs
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    paths:
+      - ".github/workflows/docs.yml"
+      - ".readthedocs.yaml"
+      - "README.md"
+      - "docs/**"
+      - "src/**"
+      - "pyproject.toml"
+
+jobs:
+  build-docs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install PDM
+        uses: pdm-project/setup-pdm@v4
+        with:
+          python-version: "3.13"
+          cache: true
+
+      - name: Install documentation dependencies
+        run: pdm sync -G docs
+
+      - name: Build documentation
+        env:
+          LANG: C.UTF-8
+          LC_ALL: C.UTF-8
+        run: pdm run sphinx-build -b html -W --keep-going docs/source docs/_build/html
+
+      - name: Upload documentation artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: html-docs
+          path: docs/_build/html

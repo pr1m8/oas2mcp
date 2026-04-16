@@ -199,6 +199,7 @@ class OperationEnhancement(NormalizedBaseModel):
     """
 
     operation_key: str
+    operation_id: str | None = None
     operation_slug: str
 
     final_kind: str

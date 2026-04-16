@@ -12,10 +12,6 @@ Design:
       alias would be awkward or invalid in Python, such as ``in``.
     - Keep raw fragments available for debugging and future enrichment.
 
-Attributes:
-    HTTP_METHODS: Supported HTTP methods used by normalized operations.
-    __all__: Curated public API for normalized model exports.
-
 Examples:
     .. code-block:: python
 
