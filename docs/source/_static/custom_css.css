@@ -1,0 +1,41 @@
+html[data-theme="light"] {
+  --sd-color-primary: #2563eb;
+  --sd-color-primary-text: #ffffff;
+}
+
+html[data-theme="dark"] {
+  --sd-color-primary: #60a5fa;
+  --sd-color-primary-text: #0b1220;
+}
+
+.hero-title {
+  font-size: 2.4rem;
+  font-weight: 800;
+  line-height: 1.1;
+  margin-bottom: 0.5rem;
+}
+
+.hero-subtitle {
+  font-size: 1.15rem;
+  color: var(--color-foreground-secondary);
+  margin-bottom: 1.25rem;
+}
+
+.sd-card.sd-shadow-sm:hover {
+  transform: translateY(-2px);
+  transition: transform 0.15s ease;
+}
+
+.toctree-wrapper.compound > .caption {
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+div.autoapi-object {
+  border-radius: 10px;
+}
+
+code.literal {
+  border-radius: 0.35rem;
+}
