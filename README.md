@@ -202,3 +202,6 @@ docs/            Sphinx documentation published through Read the Docs
 - PyPI release: `.github/workflows/release.yml`
 
 The release workflow is wired for GitHub Releases plus trusted publishing to PyPI.
+
+If you have not configured a PyPI trusted publisher yet, add a repository secret
+named `PYPI_API_TOKEN` and the same workflow will publish with a token instead.

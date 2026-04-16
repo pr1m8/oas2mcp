@@ -12,8 +12,6 @@ jobs:
     permissions:
       contents: read
       id-token: write
-    environment:
-      name: pypi
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -36,3 +34,7 @@ jobs:
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          # Prefer an explicit API token when one is configured; otherwise
+          # fall back to PyPI trusted publishing via GitHub OIDC.
+          password: ${{ secrets.PYPI_API_TOKEN }}
