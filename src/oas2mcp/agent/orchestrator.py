@@ -1,15 +1,16 @@
-"""Top-level orchestration for the oas2mcp workflow."""
-
 from __future__ import annotations
 
 from pathlib import Path
 from typing import Any
 
+from rich.console import Console
+
 from oas2mcp.agent.enhancer.agent import run_operation_enhancer
 from oas2mcp.agent.runtime import Oas2McpRuntimeContext
 from oas2mcp.agent.summarizer.agent import run_catalog_summarizer
 from oas2mcp.classify.operations import classify_catalog
-from oas2mcp.generate.export import export_enhanced_catalog_json
+from oas2mcp.generate.config import ExportConfig
+from oas2mcp.generate.export import export_enhanced_catalog_bundle
 from oas2mcp.generate.models import EnhancedCatalog
 from oas2mcp.loaders.openapi import load_openapi_spec_dict_from_url
 from oas2mcp.normalize.spec_to_catalog import spec_dict_to_catalog
@@ -22,12 +23,23 @@ def run_oas2mcp_pipeline(
     runtime_context: Oas2McpRuntimeContext,
     summarizer_model: Any | None = None,
     enhancer_model: Any | None = None,
+    console: Console | None = None,
 ) -> EnhancedCatalog:
     """Run the full summarize -> enhance-all pipeline."""
+    if console is not None:
+        console.print("[bold blue]Loading OpenAPI spec...[/bold blue]")
     spec_dict = load_openapi_spec_dict_from_url(source_url)
+
+    if console is not None:
+        console.print("[bold blue]Normalizing catalog...[/bold blue]")
     catalog = spec_dict_to_catalog(spec_dict, source_uri=source_url)
+
+    if console is not None:
+        console.print("[bold blue]Classifying MCP candidates...[/bold blue]")
     bundle = classify_catalog(catalog)
 
+    if console is not None:
+        console.print("[bold blue]Running catalog summarizer...[/bold blue]")
     summary = run_catalog_summarizer(
         catalog=catalog,
         runtime_context=runtime_context,
@@ -35,7 +47,14 @@ def run_oas2mcp_pipeline(
     )
 
     enhanced_operations = []
-    for operation in catalog.operations:
+    total_operations = len(catalog.operations)
+
+    for index, operation in enumerate(catalog.operations, start=1):
+        if console is not None:
+            console.print(
+                f"[bold yellow]Enhancing operation {index}/{total_operations}:[/bold yellow] {operation.key}"
+            )
+
         enhancement = run_operation_enhancer(
             catalog=catalog,
             bundle=bundle,
@@ -62,18 +81,24 @@ def run_and_export_oas2mcp_pipeline(
     *,
     source_url: str,
     runtime_context: Oas2McpRuntimeContext,
-    output_path: str | Path,
+    export_config: ExportConfig | None = None,
     summarizer_model: Any | None = None,
     enhancer_model: Any | None = None,
-) -> Path:
-    """Run the pipeline and export the enhanced catalog artifact."""
+    console: Console | None = None,
+) -> dict[str, Path]:
+    """Run the pipeline and export enhanced catalog artifacts."""
     enhanced_catalog = run_oas2mcp_pipeline(
         source_url=source_url,
         runtime_context=runtime_context,
         summarizer_model=summarizer_model,
         enhancer_model=enhancer_model,
+        console=console,
     )
-    return export_enhanced_catalog_json(
+
+    if console is not None:
+        console.print("[bold green]Exporting artifacts...[/bold green]")
+
+    return export_enhanced_catalog_bundle(
         enhanced_catalog=enhanced_catalog,
-        output_path=output_path,
+        config=export_config or ExportConfig(),
     )
