@@ -97,7 +97,7 @@ def main() -> None:
                 [
                     f"Catalog: {catalog.name}",
                     f"Operation: {enhancement_context.operation_key}",
-                    f"Candidate kind: {enhancement_context.candidate_kind}",
+                    f"Candidate kind hint: {enhancement_context.candidate_kind_hint}",
                     f"Operation slug: {enhancement_context.operation_slug}",
                     f"Request refs: {len(enhancement_context.request_schema_refs)}",
                     f"Response refs: {len(enhancement_context.response_schema_refs)}",
