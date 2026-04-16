@@ -2,13 +2,15 @@
 name = "oas2mcp"
 version = "0.1.0"
 description = "Default template for PDM package"
-authors = [
-    {name = "Will", email = "you@example.com"},
+authors = [{ name = "Will", email = "you@example.com" }]
+dependencies = [
+  "pydantic<3,>=2.12",
+  "rich<16,>=15",
+  "langchain-community<0.5,>=0.4",
 ]
-dependencies = []
 requires-python = ">=3.13"
 readme = "README.md"
-license = {text = "MIT"}
+license = { text = "MIT" }
 
 [build-system]
 requires = ["pdm-backend"]
@@ -17,3 +19,9 @@ build-backend = "pdm.backend"
 
 [tool.pdm]
 distribution = true
+
+[dependency-groups]
+test = ["pytest<10,>=9"]
+lint = ["ruff>=0.11", "mypy>=1.15"]
+cli = ["typer<0.25,>=0.24"]
+config = ["pydantic-settings<3,>=2.13"]
