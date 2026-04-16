@@ -1,0 +1,554 @@
+{
+  "source_url": "https://petstore3.swagger.io/api/v3/openapi.json",
+  "catalog_name": "Swagger Petstore - OpenAPI 3.0",
+  "catalog_slug": "swagger-petstore-openapi-3-0",
+  "summary": {
+    "catalog_name": "Swagger Petstore - OpenAPI 3.0",
+    "api_purpose": "Demonstration Pet Store API for managing pets, store orders, and users via a small, REST-style OpenAPI 3.0 surface.",
+    "conceptual_overview": "The API models a simple online pet store with three tightly related domains: pets, store, and users. Pets are the core catalog objects; the store domain manages inventory and orders for those pets; the user domain manages customer-style user accounts and sessions. Each domain is exposed as a small set of CRUD- and query-oriented HTTP operations, using shared schemas (Pet, User, Order) across requests and responses. Data flows are straightforward request/response over HTTPS with clear separation between reading data (GET) and mutating or destructive actions (POST, PUT, DELETE).",
+    "primary_domains": [
+      {
+        "tag_name": "pet",
+        "description": "Everything about your Pets",
+        "operation_count": 8,
+        "read_operation_count": 3,
+        "mutating_operation_count": 5,
+        "notable_operations": [
+          "POST /pet",
+          "PUT /pet",
+          "GET /pet/findByStatus",
+          "GET /pet/findByTags",
+          "GET /pet/{petId}"
+        ]
+      },
+      {
+        "tag_name": "store",
+        "description": "Access to Petstore orders",
+        "operation_count": 4,
+        "read_operation_count": 2,
+        "mutating_operation_count": 2,
+        "notable_operations": [
+          "GET /store/inventory",
+          "POST /store/order",
+          "GET /store/order/{orderId}",
+          "DELETE /store/order/{orderId}"
+        ]
+      },
+      {
+        "tag_name": "user",
+        "description": "Operations about user",
+        "operation_count": 7,
+        "read_operation_count": 3,
+        "mutating_operation_count": 4,
+        "notable_operations": [
+          "POST /user",
+          "POST /user/createWithList",
+          "GET /user/login",
+          "GET /user/logout",
+          "GET /user/{username}"
+        ]
+      }
+    ],
+    "data_model_summary": "The data model is intentionally small and reusable, centered on four schemas:\n- Pet: primary catalog entity for animals managed by the store; used heavily across pet operations and referenced indirectly by store inventory and ordering.\n- User: represents user accounts and is used for account lifecycle (create, update, delete) and session-oriented operations (login/logout, lookup by username).\n- Order: represents purchase orders placed through the store domain; it links store operations to the pet catalog and user context.\n- ApiResponse: a generic response wrapper used for non-entity-specific responses (e.g., status or upload outcomes).\n\nPet, User, and Order appear in both request bodies and responses, supporting standard CRUD patterns. The small number of schemas, and their repeated use across many operations, makes the model conceptually simple and consistent.",
+    "data_flow_summary": "Typical flows follow a simple, synchronous pattern:\n- Pet lifecycle: clients create or update Pet records (POST /pet, PUT /pet), query them by status or tags, fetch them by ID, and optionally upload associated media. Deletion removes pets from the catalog.\n- Store & orders: clients inspect store inventory (GET /store/inventory) and place, retrieve, or delete Order objects, which conceptually relate to existing Pets. Inventory is returned as a status-keyed view of available pets.\n- Users & sessions: clients create single or multiple User records, then authenticate via login, end sessions via logout, and manage user details by username.\n\nThe API cleanly separates safe read operations (GET) from mutating and destructive operations (POST, PUT, DELETE). There are no callbacks or async flows; all interactions are direct HTTP request/response exchanges against a single base URL.",
+    "authentication_summary": "Two security schemes are defined: (1) an OAuth2 \"petstore_auth\" scheme using the implicit flow, intended for browser-based authorization; and (2) an \"api_key\" scheme sending an API key in the \"api_key\" HTTP header. The catalog does not embed detailed per-operation security requirements here, but the presence of both schemes indicates support for either token-based or simple key-based access control in typical deployments.",
+    "operational_notes": [
+      "Server base URL is https://petstore3.swagger.io/api/v3, representing a public demo instance of the Petstore API.",
+      "There are 19 operations total, with 8 read-only and 11 mutating actions; of these, 3 are explicitly destructive DELETE operations (for pets, orders, and users).",
+      "The component library is intentionally minimal (6 schemas, 2 request bodies, 2 security schemes) and excludes advanced OpenAPI constructs like callbacks, links, or complex parameter components.",
+      "File upload is supported for pet images via a dedicated mutating operation, introducing binary or multipart-style traffic alongside standard JSON payloads.",
+      "The API is described as a design-first, reference OpenAPI 3.0 specification, making it stable and well-suited for tooling demonstrations."
+    ],
+    "recommended_mcp_surface": "Represent the API as three main MCP tool groups (pet, store, user) exposing the mutating and key query operations as tools, with a small set of high-value reads (e.g., inventory, pet queries, user session state) surfaced as simple resources for inspection.",
+    "suggested_tool_domains": [
+      "pet_management",
+      "order_management",
+      "user_management"
+    ],
+    "suggested_resource_domains": [
+      "pet_queries",
+      "store_inventory",
+      "user_session"
+    ],
+    "notes": [
+      "The catalog is small, regular, and dominated by a few reusable schemas, which simplifies both reasoning and MCP wrapper design.",
+      "Domain boundaries (pet, store, user) are clear and map directly to conceptual tool groupings, aiding discoverability in MCP-based clients.",
+      "Because mutating and destructive operations are explicitly separated from reads, MCP integrations can safely give reads broader default access while gating deletes and updates behind higher-sensitivity tools."
+    ]
+  },
+  "operations": [
+    {
+      "operation_key": "POST /pet",
+      "operation_slug": "addpet",
+      "final_kind": "tool",
+      "namespace": "pet",
+      "title": "Create pet",
+      "description": "Create a new pet in the store. Requires a Pet object with at least name and photoUrls; optional fields include id, category, tags, and status. Returns the created Pet.",
+      "tool_name": "swagger_petstore_add_pet",
+      "resource_uri": "openapi://swagger-petstore-openapi-3-0/operation/addpet",
+      "requires_confirmation": true,
+      "auth_notes": "Requires OAuth2 petstore_auth authorization (implicit flow).",
+      "prompt_templates": [
+        {
+          "name": "create-pet-basic",
+          "title": "Create an available pet with minimal fields",
+          "description": "Add a simple available pet to the store by specifying its name and one or more photo URLs.",
+          "arguments": ["name", "photoUrls", "status"]
+        }
+      ],
+      "notes": [
+        "Request and response bodies use the Pet schema; name and photoUrls are required fields.",
+        "This operation creates a new pet record and changes server state."
+      ]
+    },
+    {
+      "operation_key": "PUT /pet",
+      "operation_slug": "updatepet",
+      "final_kind": "tool",
+      "namespace": "pet",
+      "title": "Update existing pet",
+      "description": "Update an existing pet in the store by sending a complete Pet object (including its id). Returns the updated Pet record.",
+      "tool_name": "update_pet",
+      "resource_uri": "openapi://swagger-petstore-openapi-3-0/operation/updatepet",
+      "requires_confirmation": true,
+      "auth_notes": "Requires OAuth2 authentication via the petstore_auth scheme (implicit flow) to modify pets.",
+      "prompt_templates": [
+        {
+          "name": "update-pet-basic",
+          "title": "Update pet details",
+          "description": "Update an existing pet's details in the store by providing its id, name, status, photos, and optional tags.",
+          "arguments": ["id", "name", "status", "photoUrls", "tags", "category"]
+        }
+      ],
+      "notes": [
+        "Maps to PUT /pet in Swagger Petstore OpenAPI 3.0.",
+        "Request and response bodies use the Pet schema."
+      ]
+    },
+    {
+      "operation_key": "GET /pet/findByStatus",
+      "operation_slug": "findpetsbystatus",
+      "final_kind": "tool",
+      "namespace": "pet",
+      "title": "Find pets by status",
+      "description": "Retrieve pets filtered by one or more status values using the comma-separated \"status\" query parameter.",
+      "tool_name": "find_pets_by_status",
+      "resource_uri": "openapi://swagger-petstore-openapi-3-0/operation/findpetsbystatus",
+      "requires_confirmation": false,
+      "auth_notes": "If OAuth2 security is enabled for this operation, it uses the petstore_auth scheme; this call is read-only.",
+      "prompt_templates": [
+        {
+          "name": "find-pets-with-single-status",
+          "title": "Find pets with a single status",
+          "description": "Retrieve pets that match one specific status by passing a single value to the \"status\" filter.",
+          "arguments": ["status"]
+        },
+        {
+          "name": "find-pets-with-multiple-statuses",
+          "title": "Find pets with multiple statuses",
+          "description": "Retrieve pets that match any of several statuses by passing a comma-separated list to the \"status\" filter.",
+          "arguments": ["status"]
+        }
+      ],
+      "notes": [
+        "Accepts a comma-separated list of status values via the \"status\" query parameter.",
+        "GET-only, idempotent, and safe to call without user confirmation."
+      ]
+    },
+    {
+      "operation_key": "GET /pet/findByTags",
+      "operation_slug": "findpetsbytags",
+      "final_kind": "tool",
+      "namespace": "swagger-petstore-openapi-3-0.pet",
+      "title": "Find pets by tags",
+      "description": "Retrieve pets filtered by one or more tag names. Multiple tags can be supplied as a single comma-separated query value (for example: tag1,tag2,tag3). Returns pets that are associated with the provided tags.",
+      "tool_name": "find_pets_by_tags",
+      "resource_uri": "openapi://swagger-petstore-openapi-3-0/operation/findpetsbytags",
+      "requires_confirmation": false,
+      "auth_notes": "Uses OAuth2 security via the 'petstore_auth' implicit flow when authentication is required.",
+      "prompt_templates": [
+        {
+          "name": "find-pets-by-tags",
+          "title": "Find pets by tags",
+          "description": "Find existing pets filtered by one or more tag names. Supply tags as a comma-separated list if providing multiple values.",
+          "arguments": ["tags"]
+        }
+      ],
+      "notes": [
+        "Read-only GET operation; safe to call without user confirmation.",
+        "Backed by OAuth2 'petstore_auth' (implicit flow) according to the Petstore specification."
+      ]
+    },
+    {
+      "operation_key": "GET /pet/{petId}",
+      "operation_slug": "getpetbyid",
+      "final_kind": "tool",
+      "namespace": "pet",
+      "title": "Get pet by ID",
+      "description": "Retrieve a single pet from the Petstore by its unique ID, returning the full Pet object including name, category, status, tags, and photo URLs.",
+      "tool_name": "pet_get_by_id",
+      "resource_uri": "openapi://swagger-petstore-openapi-3-0/operation/getpetbyid",
+      "requires_confirmation": false,
+      "auth_notes": "Requires authentication via API key in the `api_key` header or OAuth2 `petstore_auth`.",
+      "prompt_templates": [
+        {
+          "name": "get-pet-by-id",
+          "title": "Look up a pet by ID",
+          "description": "Use this to fetch detailed information for a specific pet when you know its numeric ID.",
+          "arguments": ["petId"]
+        }
+      ],
+      "notes": [
+        "Read-only GET operation; safe to call without user confirmation.",
+        "Uses path parameter `petId` to identify which pet to retrieve."
+      ]
+    },
+    {
+      "operation_key": "POST /pet/{petId}",
+      "operation_slug": "updatepetwithform",
+      "final_kind": "tool",
+      "namespace": "pet",
+      "title": "Update existing pet with form data",
+      "description": "Update an existing pet in the store, identified by its petId path parameter, using form-encoded fields (typically simple attributes like name or status).",
+      "tool_name": "update_pet_with_form",
+      "resource_uri": "openapi://swagger-petstore-openapi-3-0/operation/updatepetwithform",
+      "requires_confirmation": true,
+      "auth_notes": "Requires OAuth2 authentication using the petstore_auth scheme before calling.",
+      "prompt_templates": [
+        {
+          "name": "update-pet-with-form",
+          "title": "Update a pet's basic details",
+          "description": "Update the specified pet's basic details (e.g., name or status) using form data for an existing petId.",
+          "arguments": ["petId", "name", "status"]
+        }
+      ],
+      "notes": [
+        "Mutating operation; confirm intent before changing an existing pet.",
+        "Uses form-encoded request data; ensure the correct content type is set (e.g., application/x-www-form-urlencoded).",
+        "Pet identifier petId is taken from the URL path."
+      ]
+    },
+    {
+      "operation_key": "DELETE /pet/{petId}",
+      "operation_slug": "deletepet",
+      "final_kind": "tool",
+      "namespace": "pet",
+      "title": "Delete pet by ID",
+      "description": "Delete a pet from the store by its ID. This is a destructive operation that removes the pet record.",
+      "tool_name": "delete_pet",
+      "resource_uri": "openapi://swagger-petstore-openapi-3-0/operation/deletepet",
+      "requires_confirmation": true,
+      "auth_notes": "Requires OAuth2 authentication via the petstore_auth security scheme.",
+      "prompt_templates": [
+        {
+          "name": "delete-pet-by-id",
+          "title": "Delete pet by ID",
+          "description": "Delete an existing pet from the store by providing its unique ID.",
+          "arguments": ["petId"]
+        }
+      ],
+      "notes": [
+        "No request body is expected; only the path parameter petId is required.",
+        "Operation uses OAuth2 security scheme petstore_auth as defined by the Petstore API."
+      ]
+    },
+    {
+      "operation_key": "POST /pet/{petId}/uploadImage",
+      "operation_slug": "uploadfile",
+      "final_kind": "tool",
+      "namespace": "swagger-petstore-openapi-3-0.pet",
+      "title": "Upload pet image",
+      "description": "Upload an image file and associate it with an existing pet by its ID. Stores the image on the server and returns an ApiResponse object containing a status code, type, and message describing the upload result. Requires authorization to modify pet data.",
+      "tool_name": "upload_pet_image",
+      "resource_uri": "openapi://swagger-petstore-openapi-3-0/operation/uploadfile",
+      "requires_confirmation": true,
+      "auth_notes": "Requires OAuth2 petstore_auth (implicit flow) with permission to modify pets.",
+      "prompt_templates": [
+        {
+          "name": "upload-pet-image-basic",
+          "title": "Upload an image for a pet",
+          "description": "Upload a new image for a pet identified by its ID.",
+          "arguments": ["petId"]
+        }
+      ],
+      "notes": [
+        "Path parameter petId identifies the target pet for the uploaded image.",
+        "Successful calls return an ApiResponse with code, type, and message fields describing the outcome."
+      ]
+    },
+    {
+      "operation_key": "GET /store/inventory",
+      "operation_slug": "getinventory",
+      "final_kind": "resource",
+      "namespace": "store",
+      "title": "Get store inventory (pets by status)",
+      "description": "Retrieve the current pet inventory counts grouped by status. Returns a JSON object mapping each pet status (for example, available, pending, sold) to the number of pets in that status.",
+      "tool_name": null,
+      "resource_uri": "openapi://swagger-petstore-openapi-3-0/operation/getinventory",
+      "requires_confirmation": false,
+      "auth_notes": "Requires an API key sent in the api_key header when security is enforced.",
+      "prompt_templates": [
+        {
+          "name": "view-inventory",
+          "title": "View pet inventory by status",
+          "description": "Use this to see how many pets are available, pending, or sold in the store. The response is a status-to-count map with no input arguments.",
+          "arguments": []
+        }
+      ],
+      "notes": [
+        "Read-only GET endpoint; safe to call without side effects.",
+        "Response is a JSON object mapping status strings to integer inventory counts."
+      ]
+    },
+    {
+      "operation_key": "POST /store/order",
+      "operation_slug": "placeorder",
+      "final_kind": "tool",
+      "namespace": "swagger-petstore-openapi-3-0.store",
+      "title": "Place store order for pet",
+      "description": "Create a new order in the store for a specific pet. Accepts an Order object (petId, quantity, optional shipDate, status, complete) and returns the created order with its assigned id and status.",
+      "tool_name": "place_store_order",
+      "resource_uri": "openapi://swagger-petstore-openapi-3-0/operation/placeorder",
+      "requires_confirmation": true,
+      "auth_notes": "No authentication is required for this demo operation on the public Petstore server.",
+      "prompt_templates": [
+        {
+          "name": "place-store-order",
+          "title": "Place store order for pet",
+          "description": "Create a new store order for a pet by specifying petId, quantity, and optional shipping details and status.",
+          "arguments": ["petId", "quantity", "shipDate", "status", "complete"]
+        }
+      ],
+      "notes": [
+        "Request and response both use the Order schema; ensure shipDate is RFC 3339 date-time and status is one of placed, approved, or delivered.",
+        "This is a side-effecting operation that creates a store order; keep requires_confirmation enabled in interactive clients."
+      ]
+    },
+    {
+      "operation_key": "GET /store/order/{orderId}",
+      "operation_slug": "getorderbyid",
+      "final_kind": "tool",
+      "namespace": "store",
+      "title": "Retrieve purchase order by ID",
+      "description": "Retrieve a store purchase order by its numeric ID. Returns an Order object including status, quantity, petId, shipDate, and completion flag. In this demo Petstore API, only certain sample ID values return successful responses; other IDs may produce error responses.",
+      "tool_name": "get_store_order_by_id",
+      "resource_uri": "openapi://swagger-petstore-openapi-3-0/operation/getorderbyid",
+      "requires_confirmation": false,
+      "auth_notes": null,
+      "prompt_templates": [
+        {
+          "name": "lookup-order-by-id",
+          "title": "Look up store order",
+          "description": "Retrieve the details of a store purchase order using its numeric ID.",
+          "arguments": ["orderId"]
+        }
+      ],
+      "notes": [
+        "Read-only GET operation; safe for automatic use.",
+        "Demo Petstore server only returns valid responses for a limited set of sample orderId values."
+      ]
+    },
+    {
+      "operation_key": "DELETE /store/order/{orderId}",
+      "operation_slug": "deleteorder",
+      "final_kind": "tool",
+      "namespace": "swagger-petstore-openapi-3-0.store",
+      "title": "Delete purchase order",
+      "description": "Delete an existing store purchase order by its numeric ID. In this demo API, only integer IDs less than 1000 are treated as valid; larger or non-integer IDs result in error responses.",
+      "tool_name": "delete_store_order",
+      "resource_uri": "openapi://swagger-petstore-openapi-3-0/operation/deleteorder",
+      "requires_confirmation": true,
+      "auth_notes": "No authentication required; public demo endpoint.",
+      "prompt_templates": [
+        {
+          "name": "delete-purchase-order",
+          "title": "Delete purchase order by ID",
+          "description": "Use when the user asks to cancel or remove a store purchase order given its numeric ID (<1000).",
+          "arguments": ["orderId"]
+        }
+      ],
+      "notes": [
+        "Destructive operation: removes the order if it exists.",
+        "Demo behavior: IDs >= 1000 or non-integer values are expected to produce API errors."
+      ]
+    },
+    {
+      "operation_key": "POST /user",
+      "operation_slug": "createuser",
+      "final_kind": "tool",
+      "namespace": "swagger-petstore-openapi-3-0.user",
+      "title": "Create user account",
+      "description": "Create a new user account in the Swagger Petstore by providing a User object (username, firstName, lastName, email, password, phone, userStatus). Only a logged-in user is allowed to perform this operation.",
+      "tool_name": "create_user",
+      "resource_uri": "openapi://swagger-petstore-openapi-3-0/operation/createuser",
+      "requires_confirmation": true,
+      "auth_notes": "Requires an authenticated (logged-in) user according to the Petstore security configuration.",
+      "prompt_templates": [
+        {
+          "name": "create-basic-user",
+          "title": "Create a basic user account",
+          "description": "Create a user account with the essential identity and contact fields.",
+          "arguments": [
+            "username",
+            "firstName",
+            "lastName",
+            "email",
+            "password",
+            "phone",
+            "userStatus"
+          ]
+        }
+      ],
+      "notes": [
+        "Request body must be a JSON User object matching the Petstore User schema.",
+        "Honor the API’s requirement that only logged-in users may create new users."
+      ]
+    },
+    {
+      "operation_key": "POST /user/createWithList",
+      "operation_slug": "createuserswithlistinput",
+      "final_kind": "tool",
+      "namespace": "user",
+      "title": "Create multiple users from list",
+      "description": "Create one or more user accounts in bulk by sending a JSON array of User objects in the request body. Each user object can include id, username, firstName, lastName, email, password, phone, and userStatus, following the User schema.",
+      "tool_name": "create_users_with_list_input",
+      "resource_uri": "openapi://swagger-petstore-openapi-3-0/operation/createuserswithlistinput",
+      "requires_confirmation": true,
+      "auth_notes": "No authentication is required in the Swagger Petstore demo API for this bulk user-creation operation; it performs write actions on user records.",
+      "prompt_templates": [
+        {
+          "name": "bulk-create-users",
+          "title": "Bulk create users from a list",
+          "description": "Create several users at once by providing a list of user objects with usernames, emails, and passwords.",
+          "arguments": ["users"]
+        }
+      ],
+      "notes": [
+        "Request body must be a JSON array of User objects; each element conforms to #/components/schemas/User.",
+        "This is a bulk write operation that can create many user records in a single call, so callers should confirm intent before execution."
+      ]
+    },
+    {
+      "operation_key": "GET /user/login",
+      "operation_slug": "loginuser",
+      "final_kind": "tool",
+      "namespace": "swagger-petstore-openapi-3-0.user",
+      "title": "Log in user",
+      "description": "Authenticate a user by validating their credentials and logging them into the Swagger Petstore system.",
+      "tool_name": "login_user",
+      "resource_uri": "openapi://swagger-petstore-openapi-3-0/operation/loginuser",
+      "requires_confirmation": false,
+      "auth_notes": "No prior authentication required; this endpoint is used to authenticate a user for later requests.",
+      "prompt_templates": [
+        {
+          "name": "login-user",
+          "title": "Log in a user",
+          "description": "Log a user into the Swagger Petstore system using their username and password.",
+          "arguments": ["username", "password"]
+        }
+      ],
+      "notes": [
+        "Non-destructive operation; used for user authentication, not for creating or modifying user records.",
+        "Treat password and related credentials as sensitive inputs and avoid logging or exposing them."
+      ]
+    },
+    {
+      "operation_key": "GET /user/logout",
+      "operation_slug": "logoutuser",
+      "final_kind": "tool",
+      "namespace": "user",
+      "title": "Log out current user",
+      "description": "Log out the currently logged-in user from the Swagger Petstore demo API, ending their active session.",
+      "tool_name": "logout_user",
+      "resource_uri": null,
+      "requires_confirmation": false,
+      "auth_notes": null,
+      "prompt_templates": [
+        {
+          "name": "logout-current-user",
+          "title": "Log out current user",
+          "description": "Use this to log out the current user from the Swagger Petstore system when they are finished performing actions.",
+          "arguments": []
+        }
+      ],
+      "notes": [
+        "GET endpoint used for a side-effectful logout action; treat as a tool, not a passive resource.",
+        "No authentication schemes are defined for this operation in the provided OpenAPI context."
+      ]
+    },
+    {
+      "operation_key": "GET /user/{username}",
+      "operation_slug": "getuserbyname",
+      "final_kind": "tool",
+      "namespace": "user",
+      "title": "Retrieve user by username",
+      "description": "Retrieve a single user from the Swagger Petstore demo API by their username. Returns the User object (id, username, firstName, lastName, email, password, phone, userStatus) for the matching user, or an error if no such user exists.",
+      "tool_name": "get_user_by_username",
+      "resource_uri": "openapi://swagger-petstore-openapi-3-0/operation/getuserbyname",
+      "requires_confirmation": false,
+      "auth_notes": "Demo endpoint with no authentication configured in the OpenAPI document.",
+      "prompt_templates": [
+        {
+          "name": "get-user-by-username",
+          "title": "Get user details by username",
+          "description": "Look up a user in the Swagger Petstore demo API by providing their username. Use this to fetch that user's profile and contact details.",
+          "arguments": ["username"]
+        }
+      ],
+      "notes": [
+        "Read-only GET operation; safe to call without confirmation.",
+        "Response schema conforms to #/components/schemas/User as defined in the source OpenAPI."
+      ]
+    },
+    {
+      "operation_key": "PUT /user/{username}",
+      "operation_slug": "updateuser",
+      "final_kind": "tool",
+      "namespace": "user",
+      "title": "Update user account",
+      "description": "Update an existing user account identified by username. Only the currently logged-in user is allowed to update their own account. Provide the updated user details in the request body using the User schema (id, username, firstName, lastName, email, password, phone, userStatus).",
+      "tool_name": "update_user",
+      "resource_uri": "openapi://swagger-petstore-openapi-3-0/operation/updateuser",
+      "requires_confirmation": true,
+      "auth_notes": "Caller must be authenticated as the user identified by the username path parameter; only the logged-in user can update their own record.",
+      "prompt_templates": [
+        {
+          "name": "update-user-account",
+          "title": "Update user account by username",
+          "description": "Update the logged-in user's account information for a given username. Supply the username and the new user details (e.g., firstName, lastName, email, password, phone, userStatus).",
+          "arguments": ["username", "user"]
+        }
+      ],
+      "notes": [
+        "Mutates user data; keep confirmation enabled for interactive use.",
+        "Request body follows the User schema (#/components/schemas/User); the operation does not define a structured response body."
+      ]
+    },
+    {
+      "operation_key": "DELETE /user/{username}",
+      "operation_slug": "deleteuser",
+      "final_kind": "tool",
+      "namespace": "user",
+      "title": "Delete user by username",
+      "description": "Delete a user account identified by its username. This is typically only allowed for the currently logged-in user and should be treated as a destructive action.",
+      "tool_name": "delete_user",
+      "resource_uri": "openapi://swagger-petstore-openapi-3-0/operation/deleteuser",
+      "requires_confirmation": true,
+      "auth_notes": "Caller must be authenticated as the user being deleted (logged-in user constraint).",
+      "prompt_templates": [
+        {
+          "name": "delete-user",
+          "title": "Delete a user account",
+          "description": "Delete an existing user by username after confirming that the caller really wants to remove the account.",
+          "arguments": ["username"]
+        }
+      ],
+      "notes": [
+        "Destructive DELETE operation; ensure the client confirms before calling.",
+        "No request body is used; the target user is specified via the path parameter `username`.",
+        "The catalog does not define a typed response schema; determine success from the HTTP status code."
+      ]
+    }
+  ],
+  "notes": ["Generated by the oas2mcp summarize-and-enhance pipeline."]
+}
