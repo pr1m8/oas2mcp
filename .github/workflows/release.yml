@@ -26,11 +26,12 @@ jobs:
       - name: Install PDM
         uses: pdm-project/setup-pdm@v4
         with:
+          version: "2.26.7"
           python-version: "3.13"
           cache: true
 
       - name: Install build dependencies
-        run: pdm sync -G test
+        run: pdm install -G test
 
       - name: Run pytest
         run: pdm run pytest

@@ -28,11 +28,12 @@ jobs:
       - name: Install PDM
         uses: pdm-project/setup-pdm@v4
         with:
+          version: "2.26.7"
           python-version: "3.13"
           cache: true
 
       - name: Install documentation dependencies
-        run: pdm sync -G docs
+        run: pdm install -G docs
 
       - name: Build documentation
         env:
