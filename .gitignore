@@ -214,3 +214,21 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+
+# Sphinx / docs builds
+docs/_build/
+docs/source/_build/
+docs/build/
+
+# Auto-generated API docs from AutoAPI
+docs/source/autoapi/
+docs/source/source/autoapi/
+
+# Optional local doc tooling caches
+.doctrees/
+docs/.doctrees/
+docs/source/.doctrees/
+
+# macOS / editor junk
+.DS_Store
