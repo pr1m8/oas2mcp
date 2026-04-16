@@ -9,9 +9,10 @@ Design:
     - Keep enhancer-specific prompt building and context assembly local to this
       submodule.
     - Return structured output aligned with ``OperationEnhancement``.
-    - Use dynamic prompt middleware and optional history summarization.
-    - Keep the first enhancer version tool-free because all required context is
+    - Use dynamic prompt middleware for runtime-aware behavior.
+    - Keep the one-operation enhancer tool-free because all required context is
       already provided directly in the prompt payload.
+    - Retry once when structured output validation fails in orchestrated runs.
 
 Examples:
     .. code-block:: python
@@ -29,7 +30,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from langchain.agents.middleware import SummarizationMiddleware
+from langchain.agents.structured_output import StructuredOutputValidationError
 
 from oas2mcp.agent.base import (
     DEFAULT_MODEL_NAME,
@@ -68,18 +69,8 @@ def build_enhancer_agent(
     Raises:
         RuntimeError: If the default OpenAI-backed model is used and no API key
             is available.
-
-    Examples:
-        .. code-block:: python
-
-            agent = build_enhancer_agent()
     """
     builtins: list[Any] = [
-        SummarizationMiddleware(
-            model="openai:gpt-5.1",
-            trigger=("fraction", 0.7),
-            keep=("fraction", 0.2),
-        ),
         build_operation_enhancer_dynamic_prompt(),
     ]
 
@@ -121,17 +112,6 @@ def run_operation_enhancer(
     Raises:
         RuntimeError: If the default OpenAI-backed model is used and no API key
             is available, or if no structured response is returned.
-
-    Examples:
-        .. code-block:: python
-
-            enhancement = run_operation_enhancer(
-                catalog=catalog,
-                bundle=bundle,
-                summary=summary,
-                operation=operation,
-                runtime_context=runtime_context,
-            )
     """
     enhancement_context = build_operation_enhancement_context(
         catalog=catalog,
@@ -139,24 +119,43 @@ def run_operation_enhancer(
         summary=summary,
         operation=operation,
     )
+
     enhancer_agent = build_enhancer_agent(
         model=model,
         middleware=middleware,
     )
 
-    result = enhancer_agent.invoke(
-        {
-            "messages": [
-                {
-                    "role": "user",
-                    "content": build_operation_enhancer_user_prompt(
-                        enhancement_context
-                    ),
-                }
-            ]
-        },
-        context=runtime_context,
-    )
+    try:
+        result = enhancer_agent.invoke(
+            {
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": build_operation_enhancer_user_prompt(
+                            enhancement_context
+                        ),
+                    }
+                ]
+            },
+            context=runtime_context,
+        )
+    except StructuredOutputValidationError:
+        retry_prompt = (
+            build_operation_enhancer_user_prompt(enhancement_context)
+            + "\n\nReminder: return a complete structured object with the required "
+            "fields operation_key, operation_slug, final_kind, title, and description."
+        )
+        result = enhancer_agent.invoke(
+            {
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": retry_prompt,
+                    }
+                ]
+            },
+            context=runtime_context,
+        )
 
     structured_response = result.get("structured_response")
     if structured_response is None:

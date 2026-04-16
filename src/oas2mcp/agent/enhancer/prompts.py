@@ -9,6 +9,8 @@ Design:
     - Use dynamic prompt middleware for runtime-aware instructions.
     - Keep the enhancer focused on one operation at a time.
     - Treat deterministic candidate values as hints, not final truth.
+    - Make the required structured output explicit to reduce empty-object
+      failures during orchestrated batch runs.
 
 Examples:
     .. code-block:: python
@@ -34,21 +36,34 @@ def build_operation_enhancer_system_prompt() -> str:
         None.
 
     Returns:
-        The system prompt string.
+        str: The system prompt.
 
     Raises:
         None.
-
-    Examples:
-        .. code-block:: python
-
-            prompt = build_operation_enhancer_system_prompt()
     """
     return """You are an API operation enhancement assistant.
 
 Your job is to refine one normalized API operation into a cleaner
 MCP-friendly representation for later export into an enhanced OpenAPI/FastMCP
 surface.
+
+You must return a complete structured result for the current operation.
+
+Required output fields:
+- operation_key
+- operation_slug
+- final_kind
+- title
+- description
+
+Additional optional fields:
+- namespace
+- tool_name
+- resource_uri
+- requires_confirmation
+- auth_notes
+- prompt_templates
+- notes
 
 Prioritize your enhancement in this order:
 1. Improve the title and description.
@@ -65,6 +80,7 @@ Important:
 - Do not redesign the entire API.
 - Keep names concise and stable.
 - Keep notes short and implementation-relevant.
+- Never return an empty object.
 """
 
 
@@ -79,11 +95,6 @@ def build_operation_enhancer_dynamic_prompt():
 
     Raises:
         None.
-
-    Examples:
-        .. code-block:: python
-
-            middleware = build_operation_enhancer_dynamic_prompt()
     """
 
     @dynamic_prompt
@@ -94,7 +105,7 @@ def build_operation_enhancer_dynamic_prompt():
             request: The LangChain middleware request object.
 
         Returns:
-            A runtime-aware system prompt string.
+            str: A runtime-aware system prompt.
 
         Raises:
             None.
@@ -141,15 +152,10 @@ def build_operation_enhancer_user_prompt(
         context: The operation enhancement context.
 
     Returns:
-        The user prompt string.
+        str: The user prompt string.
 
     Raises:
         None.
-
-    Examples:
-        .. code-block:: python
-
-            user_prompt = build_operation_enhancer_user_prompt(context)
     """
     serialized_context = json.dumps(
         context.model_dump(),
@@ -160,6 +166,15 @@ def build_operation_enhancer_user_prompt(
     return (
         "Enhance this one API operation for later MCP/OpenAPI export.\n\n"
         "Return a structured result aligned with the OperationEnhancement model.\n\n"
+        "You must include at least these fields:\n"
+        "- operation_key\n"
+        "- operation_slug\n"
+        "- final_kind\n"
+        "- title\n"
+        "- description\n\n"
+        "If the operation is a tool, prefer a concise tool_name.\n"
+        "If the operation is a resource, prefer a resource_uri.\n"
+        "If confirmation or auth guidance matters, include it briefly.\n\n"
         "Operation enhancement context:\n"
         f"{serialized_context}"
     )
