@@ -235,3 +235,6 @@ docs/source/.doctrees/
 
 # Optional root-level export snapshots from manual runs
 /*.enhanced.json
+
+# Local LangGraph dev-server state
+.langgraph_api/
