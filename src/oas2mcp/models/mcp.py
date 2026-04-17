@@ -21,13 +21,19 @@ Examples:
 
 from __future__ import annotations
 
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import Field
 
 from oas2mcp.models.normalized import NormalizedBaseModel
 
-McpCandidateKind = Literal["tool", "resource", "prompt", "ignore"]
+McpCandidateKind = Literal[
+    "tool",
+    "resource",
+    "resource_template",
+    "prompt",
+    "exclude",
+]
 McpSafetyLevel = Literal["safe_read", "mutating", "destructive"]
 
 
@@ -57,6 +63,10 @@ class McpPromptTemplate(NormalizedBaseModel):
     title: str
     description: str
     arguments: list[str] = Field(default_factory=list)
+    template: str | None = None
+    version: str | None = None
+    tags: list[str] = Field(default_factory=list)
+    meta: dict[str, Any] = Field(default_factory=dict)
 
 
 class McpCandidate(NormalizedBaseModel):
