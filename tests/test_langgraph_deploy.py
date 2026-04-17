@@ -12,11 +12,12 @@ from oas2mcp.deploy.langgraph_app import (
 
 
 def test_langgraph_json_declares_repo_graphs() -> None:
-    """The root LangGraph config should point at the deployment wrappers."""
-    config = json.loads(Path("langgraph.json").read_text(encoding="utf-8"))
+    """The deployment config should point at the repo graph wrappers."""
+    config = json.loads(Path("config/langgraph.json").read_text(encoding="utf-8"))
 
-    assert config["dependencies"] == ["."]
-    assert config["env"] == "./.env"
+    assert config["python_version"] == "3.13"
+    assert config["dependencies"] == [".."]
+    assert config["env"] == "../.env"
     assert set(config["graphs"]) == {
         "enhance_catalog",
         "enhance_and_export_catalog",

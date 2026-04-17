@@ -7,12 +7,14 @@ from oas2mcp.agent.surface.models import (
     CatalogSurfacePromptPlan,
     CatalogSurfaceResourcePlan,
 )
+from oas2mcp.generate.config import ExportConfig
 from oas2mcp.generate.export import (
     build_catalog_prompt_definitions,
     build_catalog_resource_definitions,
     build_fastmcp_config,
     build_fastmcp_name_map,
     build_server_instructions,
+    export_enhanced_catalog_bundle,
 )
 
 
@@ -110,3 +112,20 @@ def test_surface_plan_overrides_fastmcp_defaults(example_enhanced_catalog) -> No
         "custom_resource"
     ]
     assert config["surface_notes"] == ["customized"]
+
+
+def test_export_bundle_does_not_write_root_snapshot_by_default(
+    tmp_path,
+    example_enhanced_catalog,
+) -> None:
+    """Default exports should stay under the export directory."""
+    outputs = export_enhanced_catalog_bundle(
+        enhanced_catalog=example_enhanced_catalog,
+        config=ExportConfig(project_root=tmp_path, export_dir="exports"),
+    )
+
+    assert "root_snapshot" not in outputs
+    assert not (tmp_path / "example-api.enhanced.json").exists()
+    assert outputs["enhanced_catalog"] == (
+        tmp_path / "exports" / "example-api_enhanced_catalog.json"
+    )

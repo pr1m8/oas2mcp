@@ -27,14 +27,14 @@ class ExportConfig(NormalizedBaseModel):
             config = ExportConfig(
                 project_root=Path.cwd(),
                 export_dir="data/exports",
-                write_root_snapshot=True,
+                write_root_snapshot=False,
             )
     """
 
     project_root: Path = Field(default_factory=Path.cwd)
     export_dir: str = "data/exports"
 
-    write_root_snapshot: bool = True
+    write_root_snapshot: bool = False
     root_snapshot_name: str | None = None
 
     write_operation_notes: bool = True
