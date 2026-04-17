@@ -27,8 +27,8 @@ from oas2mcp.models.mcp import (
 from oas2mcp.models.normalized import ApiCatalog, ApiOperation
 from oas2mcp.utils.names import (
     make_catalog_slug,
+    make_operation_resource_uri,
     make_operation_slug,
-    make_resource_uri,
     make_tool_name,
 )
 
@@ -86,13 +86,13 @@ def classify_operation(*, catalog: ApiCatalog, operation: ApiOperation) -> McpCa
     """
     operation_slug = make_operation_slug(operation)
     tool_name = make_tool_name(catalog_name=catalog.name, operation=operation)
-    resource_uri = make_resource_uri(
-        catalog_name=catalog.name,
-        resource_kind="operation",
-        identifier=operation_slug,
-    )
 
     kind = _infer_kind(operation)
+    resource_uri = (
+        make_operation_resource_uri(catalog_name=catalog.name, operation=operation)
+        if kind in {"resource", "resource_template"}
+        else None
+    )
     safety_level = _infer_safety_level(operation)
     requires_confirmation = operation.is_mutating or operation.deprecated
 
@@ -149,14 +149,19 @@ def _infer_kind(operation: ApiOperation) -> str:
     if operation.is_mutating:
         return "tool"
 
-    if (
-        operation.method in {"GET", "HEAD"}
-        and not operation.parameters
-        and operation.request_body is None
-    ):
-        return "resource"
+    if operation.method not in {"GET", "HEAD"}:
+        return "tool"
 
-    return "tool"
+    if operation.request_body is not None:
+        return "tool"
+
+    has_path_or_query_parameters = any(
+        parameter.location in {"path", "query"} for parameter in operation.parameters
+    )
+    if has_path_or_query_parameters:
+        return "resource_template"
+
+    return "resource"
 
 
 def _infer_safety_level(operation: ApiOperation) -> str:
@@ -302,11 +307,27 @@ def _build_prompt_templates(operation_slug: str, title: str) -> list[McpPromptTe
             title=f"Explain {title}",
             description="Summarize what this operation does, its inputs, and its outputs.",
             arguments=["user_goal"],
+            template=(
+                f"Explain how to use the `{operation_slug}` operation.\n"
+                "User goal: {user_goal}\n\n"
+                "Describe the expected inputs, outputs, and any important caveats."
+            ),
+            tags=["operation", "explain"],
+            meta={"generated_by": "oas2mcp", "operation_slug": operation_slug},
         ),
         McpPromptTemplate(
             name=f"draft-call-{operation_slug}",
             title=f"Draft call for {title}",
             description="Draft a safe and valid call plan for this operation.",
             arguments=["user_goal", "known_inputs"],
+            template=(
+                f"Draft a safe call plan for the `{operation_slug}` operation.\n"
+                "User goal: {user_goal}\n"
+                "Known inputs: {known_inputs}\n\n"
+                "List the required parameters, optional parameters, and any "
+                "confirmation or auth considerations."
+            ),
+            tags=["operation", "planning"],
+            meta={"generated_by": "oas2mcp", "operation_slug": operation_slug},
         ),
     ]
