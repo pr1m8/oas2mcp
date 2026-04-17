@@ -232,3 +232,6 @@ docs/source/.doctrees/
 
 # macOS / editor junk
 .DS_Store
+
+# Optional root-level export snapshots from manual runs
+/*.enhanced.json
