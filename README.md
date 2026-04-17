@@ -76,6 +76,9 @@ For local development:
 pdm install -G test -G docs -G cli
 ```
 
+The `cli` group includes the in-memory LangGraph API server extras needed for
+`langgraph dev`, not just the bare CLI wrapper.
+
 ## Example usage
 
 ### 1. Load and inspect a local or remote spec
@@ -169,6 +172,9 @@ The bootstrap layer respects:
 
 The repo includes deployable LangGraph wrappers in [src/oas2mcp/deploy/langgraph_app.py](src/oas2mcp/deploy/langgraph_app.py) and a deployment config at [config/langgraph.json](config/langgraph.json).
 
+Run the LangGraph CLI commands from the repository root so the config's `./src`
+and `./.env` paths resolve correctly.
+
 The two exposed graphs are:
 
 - `enhance_catalog`: runs the in-memory summarize -> enhance -> surface-plan flow and returns enhanced catalog JSON
@@ -177,20 +183,20 @@ The two exposed graphs are:
 Run the local LangGraph dev server:
 
 ```bash
-pdm run langgraph dev -c config/langgraph.json
+pdm run langgraph dev --config config/langgraph.json --no-browser
 ```
 
 Validate the deployment config:
 
 ```bash
-pdm run langgraph validate -c config/langgraph.json
+pdm run langgraph validate --config config/langgraph.json
 ```
 
 Build or deploy:
 
 ```bash
-pdm run langgraph build -c config/langgraph.json -t oas2mcp
-pdm run langgraph deploy -c config/langgraph.json
+pdm run langgraph build --config config/langgraph.json -t oas2mcp
+pdm run langgraph deploy --config config/langgraph.json
 ```
 
 `langgraph deploy` reads `LANGSMITH_API_KEY` from `.env`. The config is pinned to Python 3.13 so deployment matches the package runtime.
