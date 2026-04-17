@@ -241,3 +241,6 @@ docs/source/.doctrees/
 
 # Repo-local PDM logs for scripted release cuts
 .pdm-logs/
+
+# Repo-local uv cache for scripted release cuts
+.uv-cache/

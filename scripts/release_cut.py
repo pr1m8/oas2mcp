@@ -76,19 +76,41 @@ def build_command_env(root: Path) -> dict[str, str]:
         Environment variables for subprocess calls.
     """
     env = os.environ.copy()
-    env.setdefault("PDM_LOG_DIR", str(root / ".pdm-logs"))
+    pdm_log_dir = root / ".pdm-logs"
+    uv_cache_dir = root / ".uv-cache"
+    pdm_log_dir.mkdir(exist_ok=True)
+    uv_cache_dir.mkdir(exist_ok=True)
+    env.setdefault("PDM_LOG_DIR", str(pdm_log_dir))
+    env.setdefault("UV_CACHE_DIR", str(uv_cache_dir))
     return env
 
 
-def restore_release_files(root: Path, tracked: list[str]) -> None:
-    """Restore tracked release files after a failed release cut.
+def snapshot_release_files(root: Path, tracked: list[str]) -> dict[str, str]:
+    """Snapshot tracked release files before mutating them.
 
     Args:
         root: Repository root.
         tracked: Repository-relative tracked files to restore.
+
+    Returns:
+        Original file contents keyed by repository-relative path.
     """
-    run(["git", "restore", "--staged", *tracked], cwd=root)
-    run(["git", "restore", *tracked], cwd=root)
+    return {
+        path: (root / path).read_text(encoding="utf-8")
+        for path in tracked
+        if (root / path).exists()
+    }
+
+
+def restore_release_files(root: Path, originals: dict[str, str]) -> None:
+    """Restore tracked release files after a failed release cut.
+
+    Args:
+        root: Repository root.
+        originals: Original file contents keyed by repository-relative path.
+    """
+    for path, contents in originals.items():
+        (root / path).write_text(contents, encoding="utf-8")
 
 
 def ensure_clean_worktree(root: Path) -> None:
@@ -153,6 +175,7 @@ def main() -> int:
     ensure_tag_absent(root, tag)
 
     tracked = ["pyproject.toml", "docs/source/conf.py", "pdm.lock"]
+    originals = snapshot_release_files(root, tracked)
     committed = False
     try:
         write_release_version(target, files)
@@ -167,7 +190,7 @@ def main() -> int:
         run(["git", "tag", "-a", tag, "-m", tag], cwd=root)
     except subprocess.CalledProcessError as exc:
         if not committed:
-            restore_release_files(root, tracked)
+            restore_release_files(root, originals)
         raise SystemExit(exc.returncode) from exc
 
     print(f"Created local release commit and tag: {tag}")
