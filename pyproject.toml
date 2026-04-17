@@ -10,6 +10,7 @@ dependencies = [
   "langchain-core>=1.2.30",
   "langgraph>=1.1.6",
   "langgraph-sdk>=0.3.13",
+  "langsmith>=0.7.32",
   "langchain-openai>=1.1.13",
   "python-dotenv>=1.2.2",
   "httpx>=0.28.1",
@@ -41,15 +42,16 @@ Documentation = "https://oas2mcp.readthedocs.io/en/latest/"
 Issues = "https://github.com/pr1m8/oas2mcp/issues"
 
 [project.optional-dependencies]
-cli = ["typer<0.25,>=0.24", "langgraph-cli"]
+cli = ["typer<0.25,>=0.24", "langgraph-cli>=0.2.11"]
+test = ["pytest<10,>=9"]
 
 [build-system]
 requires = ["pdm-backend"]
 build-backend = "pdm.backend"
 
+[tool.pdm]
+distribution = true
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-ra"
-
-[tool.pdm]
-distribution = true
