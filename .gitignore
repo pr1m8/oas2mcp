@@ -238,3 +238,6 @@ docs/source/.doctrees/
 
 # Local LangGraph dev-server state
 .langgraph_api/
+
+# Repo-local PDM logs for scripted release cuts
+.pdm-logs/

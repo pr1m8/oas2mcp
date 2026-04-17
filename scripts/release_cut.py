@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 import subprocess
 from pathlib import Path
 
@@ -38,7 +39,11 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def run(
-    args: list[str], *, cwd: Path, capture_output: bool = False
+    args: list[str],
+    *,
+    cwd: Path,
+    capture_output: bool = False,
+    env: dict[str, str] | None = None,
 ) -> subprocess.CompletedProcess[str]:
     """Run a subprocess with consistent error handling.
 
@@ -46,6 +51,7 @@ def run(
         args: Command and arguments to execute.
         cwd: Working directory for the command.
         capture_output: Whether to capture stdout for later inspection.
+        env: Optional environment overrides.
 
     Returns:
         Completed subprocess result.
@@ -56,7 +62,33 @@ def run(
         check=True,
         text=True,
         capture_output=capture_output,
+        env=env,
     )
+
+
+def build_command_env(root: Path) -> dict[str, str]:
+    """Build subprocess environment with repo-local PDM logging.
+
+    Args:
+        root: Repository root.
+
+    Returns:
+        Environment variables for subprocess calls.
+    """
+    env = os.environ.copy()
+    env.setdefault("PDM_LOG_DIR", str(root / ".pdm-logs"))
+    return env
+
+
+def restore_release_files(root: Path, tracked: list[str]) -> None:
+    """Restore tracked release files after a failed release cut.
+
+    Args:
+        root: Repository root.
+        tracked: Repository-relative tracked files to restore.
+    """
+    run(["git", "restore", "--staged", *tracked], cwd=root)
+    run(["git", "restore", *tracked], cwd=root)
 
 
 def ensure_clean_worktree(root: Path) -> None:
@@ -108,6 +140,7 @@ def main() -> int:
         pyproject=root / "pyproject.toml",
         docs_conf=root / "docs/source/conf.py",
     )
+    env = build_command_env(root)
 
     ensure_clean_worktree(root)
 
@@ -119,16 +152,23 @@ def main() -> int:
     tag = build_release_tag(target)
     ensure_tag_absent(root, tag)
 
-    write_release_version(target, files)
-    run(["pdm", "lock"], cwd=root)
-    run(["pdm", "run", "release_check"], cwd=root)
-
     tracked = ["pyproject.toml", "docs/source/conf.py", "pdm.lock"]
-    run(["git", "add", *tracked], cwd=root)
+    committed = False
+    try:
+        write_release_version(target, files)
+        run(["pdm", "lock"], cwd=root, env=env)
+        run(["pdm", "run", "release_check"], cwd=root, env=env)
 
-    commit_message = build_release_commit_message(target)
-    run(["git", "commit", "-m", commit_message], cwd=root)
-    run(["git", "tag", "-a", tag, "-m", tag], cwd=root)
+        run(["git", "add", *tracked], cwd=root)
+
+        commit_message = build_release_commit_message(target)
+        run(["git", "commit", "-m", commit_message], cwd=root)
+        committed = True
+        run(["git", "tag", "-a", tag, "-m", tag], cwd=root)
+    except subprocess.CalledProcessError as exc:
+        if not committed:
+            restore_release_files(root, tracked)
+        raise SystemExit(exc.returncode) from exc
 
     print(f"Created local release commit and tag: {tag}")
     print("Next step: git push origin main && git push origin " + tag)
