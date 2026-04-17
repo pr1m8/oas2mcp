@@ -39,6 +39,7 @@ class ExportConfig(NormalizedBaseModel):
 
     write_operation_notes: bool = True
     write_fastmcp_config: bool = True
+    write_surface_plan: bool = True
 
     @property
     def resolved_export_dir(self) -> Path:

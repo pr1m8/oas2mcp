@@ -12,24 +12,38 @@ Design:
 
 from oas2mcp.generate.config import ExportConfig
 from oas2mcp.generate.export import (
+    build_catalog_prompt_definitions,
+    build_catalog_resource_definitions,
     build_fastmcp_config,
     build_operation_notes_map,
+    build_server_instructions,
     export_enhanced_catalog_bundle,
 )
 from oas2mcp.generate.fastmcp_app import (
     build_fastmcp_from_exported_artifacts,
     build_fastmcp_from_loaded_artifacts,
     register_exported_prompts,
+    register_exported_resources,
 )
-from oas2mcp.generate.models import EnhancedCatalog
+from oas2mcp.generate.models import (
+    CatalogPromptDefinition,
+    CatalogResourceDefinition,
+    EnhancedCatalog,
+)
 
 __all__ = [
+    "CatalogPromptDefinition",
+    "CatalogResourceDefinition",
     "EnhancedCatalog",
     "ExportConfig",
+    "build_catalog_prompt_definitions",
+    "build_catalog_resource_definitions",
     "build_fastmcp_config",
     "build_fastmcp_from_exported_artifacts",
     "build_fastmcp_from_loaded_artifacts",
     "build_operation_notes_map",
+    "build_server_instructions",
     "export_enhanced_catalog_bundle",
     "register_exported_prompts",
+    "register_exported_resources",
 ]
