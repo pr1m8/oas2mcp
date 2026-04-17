@@ -1,6 +1,6 @@
 [project]
 name = "oas2mcp"
-version = "0.1.8"
+version = "0.1.9"
 description = "Turn OpenAPI specs into MCP-friendly catalogs, exports, and FastMCP bootstrap artifacts."
 authors = [{ name = "Will" }]
 dependencies = [
