@@ -26,6 +26,7 @@ Examples:
 from __future__ import annotations
 
 from oas2mcp.agent.enhancer.models import (
+    EnhancementPromptCandidate,
     OperationEnhancementContext,
     ResolvedSchemaContext,
     SecuritySchemeContext,
@@ -129,9 +130,25 @@ def build_operation_enhancement_context(
         candidate_tool_name_hint=candidate.tool_name,
         candidate_resource_uri_hint=candidate.resource_uri,
         candidate_requires_confirmation_hint=candidate.requires_confirmation,
+        candidate_prompt_templates=[
+            EnhancementPromptCandidate.model_validate(
+                prompt.model_dump(),
+            )
+            for prompt in candidate.prompt_templates
+        ],
         request_schema_refs=request_refs,
         response_schema_refs=response_refs,
         resolved_schemas=resolved_schemas,
+        path_parameter_names=[
+            parameter.name
+            for parameter in operation.parameters
+            if parameter.location == "path"
+        ],
+        query_parameter_names=[
+            parameter.name
+            for parameter in operation.parameters
+            if parameter.location == "query"
+        ],
         security_schemes=security_schemes,
     )
 

@@ -87,8 +87,13 @@ Required output fields:
 
 Additional optional fields:
 - namespace
+- component_name
 - tool_name
 - resource_uri
+- component_version
+- component_tags
+- component_meta
+- component_annotations
 - requires_confirmation
 - auth_notes
 - prompt_templates
@@ -109,6 +114,14 @@ Important:
 - Do not redesign the entire API.
 - Keep names concise and stable.
 - Keep notes short and implementation-relevant.
+- Valid final_kind values are: tool, resource, resource_template, prompt, exclude.
+- Use resource_template for read-oriented operations whose exported URI should
+  include path or query parameters.
+- Use exclude when an operation should not be exposed directly through the
+  FastMCP bootstrap surface.
+- Prompt templates should only be suggested when they create a reusable
+  interaction pattern, and each prompt template may include template, version,
+  tags, and meta fields.
 - Never return an empty object.
 """
 
@@ -180,8 +193,13 @@ def build_operation_enhancer_user_prompt(
         "- final_kind\n"
         "- title\n"
         "- description\n\n"
+        "If useful, set component_name to control the exported FastMCP "
+        "component name directly.\n"
         "If the operation is a tool, prefer a concise tool_name.\n"
-        "If the operation is a resource, prefer a resource_uri.\n"
+        "If the operation is a resource or resource_template, prefer a stable "
+        "resource_uri.\n"
+        "If helpful, attach component_version, component_tags, component_meta, "
+        "and component_annotations for later FastMCP export.\n"
         "If confirmation or auth guidance matters, include it briefly.\n\n"
         "Operation enhancement context:\n"
         f"{serialized_context}"

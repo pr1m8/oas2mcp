@@ -27,8 +27,11 @@ Examples:
 
 from __future__ import annotations
 
+from typing import Any
+
 from pydantic import Field
 
+from oas2mcp.models.mcp import McpCandidateKind
 from oas2mcp.models.normalized import NormalizedBaseModel
 
 
@@ -114,6 +117,10 @@ class EnhancementPromptCandidate(NormalizedBaseModel):
     title: str
     description: str
     arguments: list[str] = Field(default_factory=list)
+    template: str | None = None
+    version: str | None = None
+    tags: list[str] = Field(default_factory=list)
+    meta: dict[str, Any] = Field(default_factory=dict)
 
 
 class OperationEnhancementContext(NormalizedBaseModel):
@@ -166,10 +173,15 @@ class OperationEnhancementContext(NormalizedBaseModel):
     candidate_tool_name_hint: str | None = None
     candidate_resource_uri_hint: str | None = None
     candidate_requires_confirmation_hint: bool = False
+    candidate_prompt_templates: list[EnhancementPromptCandidate] = Field(
+        default_factory=list
+    )
 
     request_schema_refs: list[str] = Field(default_factory=list)
     response_schema_refs: list[str] = Field(default_factory=list)
     resolved_schemas: list[ResolvedSchemaContext] = Field(default_factory=list)
+    path_parameter_names: list[str] = Field(default_factory=list)
+    query_parameter_names: list[str] = Field(default_factory=list)
 
     security_schemes: list[SecuritySchemeContext] = Field(default_factory=list)
 
@@ -202,13 +214,18 @@ class OperationEnhancement(NormalizedBaseModel):
     operation_id: str | None = None
     operation_slug: str
 
-    final_kind: str
+    final_kind: McpCandidateKind
     namespace: str | None = None
     title: str
     description: str
 
+    component_name: str | None = None
     tool_name: str | None = None
     resource_uri: str | None = None
+    component_version: str | None = None
+    component_tags: list[str] = Field(default_factory=list)
+    component_meta: dict[str, Any] = Field(default_factory=dict)
+    component_annotations: dict[str, Any] = Field(default_factory=dict)
 
     requires_confirmation: bool = False
     auth_notes: str | None = None
