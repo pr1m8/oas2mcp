@@ -143,6 +143,15 @@ Required for summarizer and enhancer flows:
 
 - `OPENAI_API_KEY`
 
+Optional for LangSmith tracing and LangGraph deployment:
+
+- `LANGSMITH_TRACING=true`
+- `LANGSMITH_API_KEY`
+- `LANGSMITH_PROJECT`
+- `LANGSMITH_WORKSPACE_ID`
+- `LANGSMITH_DEPLOYMENT_NAME`
+- `LANGSMITH_ENDPOINT` for self-hosted LangSmith only
+
 Optional for live upstream FastMCP checks:
 
 - `UPSTREAM_BEARER_TOKEN`
@@ -174,11 +183,43 @@ pdm run sphinx-build -b html -W --keep-going docs/source docs/_build/html
 Manual smoke checks remain available for interactive inspection:
 
 ```bash
+pdm run python scripts/test_catalog_surface_planner_agent.py
 pdm run python scripts/test_orchestrator.py
 pdm run python scripts/test_fastmcp_bootstrap.py
 pdm run python scripts/test_fastmcp_server.py
 pdm run python scripts/test_fastmcp_client.py
 ```
+
+## LangGraph deployment
+
+The repo now includes a root-level `langgraph.json` and deployable graph entrypoints in
+`src/oas2mcp/deploy/langgraph_app.py`.
+
+Install the CLI group:
+
+```bash
+pdm install -G cli
+```
+
+Run the LangGraph dev server locally:
+
+```bash
+pdm run langgraph dev -c langgraph.json
+```
+
+The configured graphs are:
+
+- `enhance_catalog`: runs the in-memory summarize/enhance/surface-planning pipeline and returns the enhanced catalog JSON
+- `enhance_and_export_catalog`: runs the export pipeline and returns the written artifact paths
+
+For deployment to LangSmith Deployments:
+
+```bash
+pdm run langgraph build -c langgraph.json -t oas2mcp
+pdm run langgraph deploy -c langgraph.json
+```
+
+`langgraph deploy` can read the API key from `.env` via `LANGSMITH_API_KEY`.
 
 ## Project layout
 
