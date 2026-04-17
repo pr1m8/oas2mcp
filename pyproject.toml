@@ -1,6 +1,6 @@
 [project]
 name = "oas2mcp"
-version = "0.1.4"
+version = "0.1.5"
 description = "Turn OpenAPI specs into MCP-friendly catalogs, exports, and FastMCP bootstrap artifacts."
 authors = [{ name = "Will" }]
 dependencies = [
@@ -61,6 +61,9 @@ release_bump_major = { composite = [
   "python scripts/release_version.py --part major",
   "pdm lock",
 ] }
+release_prepare_patch = { composite = ["release_bump_patch", "release_check"] }
+release_prepare_minor = { composite = ["release_bump_minor", "release_check"] }
+release_prepare_major = { composite = ["release_bump_major", "release_check"] }
 
 [dependency-groups]
 test = ["pytest<10,>=9"]

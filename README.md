@@ -285,10 +285,9 @@ docs/            Sphinx documentation published through Read the Docs
 
 The release path is now tag-driven and smoother:
 
-1. `pdm run release_bump_patch` (or `release_bump_minor` / `release_bump_major`)
-2. `pdm run release_check`
-3. commit and tag `vX.Y.Z`
-4. push `main` and the tag
+1. `pdm run release_prepare_patch` (or `release_prepare_minor` / `release_prepare_major`)
+2. commit and tag `vX.Y.Z`
+3. push `main` and the tag
 
 Pushing a `v*` tag triggers `.github/workflows/release.yml`, which:
 
