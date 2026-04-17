@@ -18,7 +18,7 @@ SRC = ROOT / "src"
 project = "oas2mcp"
 copyright = "2026, pr1m8"
 author = "pr1m8"
-release = "0.1.5"
+release = "0.1.6"
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
