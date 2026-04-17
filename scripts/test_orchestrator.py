@@ -27,7 +27,7 @@ def main() -> None:
 
     export_config = ExportConfig(
         export_dir="data/exports",
-        write_root_snapshot=True,
+        write_root_snapshot=False,
     )
 
     console.print(

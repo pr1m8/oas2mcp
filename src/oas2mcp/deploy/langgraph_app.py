@@ -65,7 +65,7 @@ def _build_runtime_context(state: Mapping[str, Any]) -> Oas2McpRuntimeContext:
 def _build_export_config(state: Mapping[str, Any]) -> ExportConfig:
     """Build export configuration from graph state."""
     config = ExportConfig(
-        write_root_snapshot=bool(state.get("write_root_snapshot", True)),
+        write_root_snapshot=bool(state.get("write_root_snapshot", False)),
         root_snapshot_name=state.get("root_snapshot_name"),
         write_operation_notes=bool(state.get("write_operation_notes", True)),
         write_fastmcp_config=bool(state.get("write_fastmcp_config", True)),
