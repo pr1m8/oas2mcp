@@ -8,6 +8,9 @@ Install
 
    pdm install -G test -G docs -G cli
 
+The ``cli`` group includes the in-memory LangGraph API server extras required
+for ``langgraph dev``.
+
 Environment
 -----------
 
@@ -63,6 +66,9 @@ The repository includes deployable graph entrypoints in
 ``src/oas2mcp/deploy/langgraph_app.py`` and a deployment config at
 ``config/langgraph.json``.
 
+Run the LangGraph CLI commands from the repository root so the config's
+``./src`` and ``./.env`` paths resolve correctly.
+
 Install the CLI group:
 
 .. code-block:: bash
@@ -73,7 +79,7 @@ Run the LangGraph dev server locally:
 
 .. code-block:: bash
 
-   pdm run langgraph dev -c config/langgraph.json
+   pdm run langgraph dev --config config/langgraph.json --no-browser
 
 The configured graphs are:
 
@@ -84,11 +90,11 @@ Validate the deployment config:
 
 .. code-block:: bash
 
-   pdm run langgraph validate -c config/langgraph.json
+   pdm run langgraph validate --config config/langgraph.json
 
 Build or deploy with the LangGraph CLI:
 
 .. code-block:: bash
 
-   pdm run langgraph build -c config/langgraph.json -t oas2mcp
-   pdm run langgraph deploy -c config/langgraph.json
+   pdm run langgraph build --config config/langgraph.json -t oas2mcp
+   pdm run langgraph deploy --config config/langgraph.json
