@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import tomllib
 from pathlib import Path
 
 from oas2mcp.deploy.langgraph_app import (
@@ -16,12 +17,24 @@ def test_langgraph_json_declares_repo_graphs() -> None:
     config = json.loads(Path("config/langgraph.json").read_text(encoding="utf-8"))
 
     assert config["python_version"] == "3.13"
-    assert config["dependencies"] == [".."]
-    assert config["env"] == "../.env"
+    assert config["dependencies"] == ["."]
+    assert config["env"] == "./.env"
     assert set(config["graphs"]) == {
         "enhance_catalog",
         "enhance_and_export_catalog",
     }
+    assert config["graphs"]["enhance_catalog"].startswith(
+        "./src/oas2mcp/deploy/langgraph_app.py:"
+    )
+
+
+def test_cli_dependency_group_includes_inmem_langgraph_server() -> None:
+    """The CLI dependency group should support ``langgraph dev`` directly."""
+    pyproject = tomllib.loads(Path("pyproject.toml").read_text(encoding="utf-8"))
+
+    cli_group = pyproject["dependency-groups"]["cli"]
+
+    assert "langgraph-cli[inmem]>=0.2.11" in cli_group
 
 
 def test_enhance_catalog_graph_invokes_pipeline(monkeypatch) -> None:
