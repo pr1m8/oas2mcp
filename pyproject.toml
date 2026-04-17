@@ -47,7 +47,7 @@ distribution = true
 [dependency-groups]
 test = ["pytest<10,>=9"]
 lint = ["ruff>=0.11", "mypy>=1.15"]
-cli = ["typer<0.25,>=0.24", "langgraph-cli>=0.2.11"]
+cli = ["typer<0.25,>=0.24", "langgraph-cli[inmem]>=0.2.11"]
 config = ["pydantic-settings<3,>=2.13"]
 docs = [
   "sphinx>=9.1.0",
