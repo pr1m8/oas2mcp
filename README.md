@@ -283,4 +283,20 @@ docs/            Sphinx documentation published through Read the Docs
 - docs validation: `.github/workflows/docs.yml`
 - PyPI release: `.github/workflows/release.yml`
 
-The release workflow supports GitHub Releases plus trusted publishing to PyPI. If you have not configured a PyPI trusted publisher yet, add a repository secret named `PYPI_API_TOKEN` and the same workflow can publish with a token instead.
+The release path is now tag-driven and smoother:
+
+1. `pdm run release_bump_patch` (or `release_bump_minor` / `release_bump_major`)
+2. `pdm run release_check`
+3. commit and tag `vX.Y.Z`
+4. push `main` and the tag
+
+Pushing a `v*` tag triggers `.github/workflows/release.yml`, which:
+
+- verifies the tag matches `pyproject.toml`
+- runs tests
+- builds docs
+- builds distributions
+- publishes to PyPI
+- creates the GitHub Release and attaches `dist/*`
+
+If you have not configured a PyPI trusted publisher yet, add a repository secret named `PYPI_API_TOKEN` and the same workflow can publish with a token instead.

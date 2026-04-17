@@ -44,6 +44,24 @@ build-backend = "pdm.backend"
 [tool.pdm]
 distribution = true
 
+[tool.pdm.scripts]
+test = "pytest"
+docs_build = { cmd = "sphinx-build -b html -W --keep-going docs/source docs/_build/html", env = { LANG = "en_US.UTF-8", LC_ALL = "en_US.UTF-8" } }
+build_dist = "pdm build"
+release_check = { composite = ["test", "docs_build", "build_dist"] }
+release_bump_patch = { composite = [
+  "python scripts/release_version.py --part patch",
+  "pdm lock",
+] }
+release_bump_minor = { composite = [
+  "python scripts/release_version.py --part minor",
+  "pdm lock",
+] }
+release_bump_major = { composite = [
+  "python scripts/release_version.py --part major",
+  "pdm lock",
+] }
+
 [dependency-groups]
 test = ["pytest<10,>=9"]
 lint = ["ruff>=0.11", "mypy>=1.15"]
