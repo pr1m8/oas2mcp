@@ -6,6 +6,8 @@ from oas2mcp.classify.operations import (
 )
 from oas2mcp.loaders.openapi import (
     dump_openapi_spec,
+    load_openapi_spec,
+    load_openapi_spec_dict,
     load_openapi_spec_dict_from_file,
     load_openapi_spec_dict_from_text,
     load_openapi_spec_dict_from_url,
@@ -26,6 +28,8 @@ __all__ = [
     "classify_catalog",
     "classify_operation",
     "dump_openapi_spec",
+    "load_openapi_spec",
+    "load_openapi_spec_dict",
     "load_openapi_spec_dict_from_file",
     "load_openapi_spec_dict_from_text",
     "load_openapi_spec_dict_from_url",

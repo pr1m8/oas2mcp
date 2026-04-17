@@ -169,3 +169,40 @@ def make_resource_uri(
             )
     """
     return f"openapi://{make_catalog_slug(catalog_name)}/{slugify(resource_kind)}/{slugify(identifier)}"
+
+
+def make_operation_resource_uri(*, catalog_name: str, operation: ApiOperation) -> str:
+    """Create a resource URI or URI template for one operation.
+
+    Args:
+        catalog_name: The API catalog name.
+        operation: The normalized API operation.
+
+    Returns:
+        A stable URI for read-only resources or a URI template for parameterized
+        read operations.
+    """
+    catalog_slug = make_catalog_slug(catalog_name)
+    path_segments: list[str] = []
+
+    for raw_segment in operation.path.strip("/").split("/"):
+        if not raw_segment:
+            continue
+        if raw_segment.startswith("{") and raw_segment.endswith("}"):
+            path_segments.append(raw_segment)
+            continue
+        path_segments.append(slugify(raw_segment))
+
+    base_uri = f"openapi://{catalog_slug}"
+    if path_segments:
+        base_uri += "/" + "/".join(path_segments)
+
+    query_parameters = sorted(
+        parameter.name
+        for parameter in operation.parameters
+        if parameter.location == "query"
+    )
+    if query_parameters:
+        base_uri += "{?" + ",".join(query_parameters) + "}"
+
+    return base_uri
