@@ -285,9 +285,18 @@ docs/            Sphinx documentation published through Read the Docs
 
 The release path is now tag-driven and smoother:
 
-1. `pdm run release_prepare_patch` (or `release_prepare_minor` / `release_prepare_major`)
-2. commit and tag `vX.Y.Z`
-3. push `main` and the tag
+1. `pdm run release_cut_patch` (or `release_cut_minor` / `release_cut_major`)
+2. `git push origin main`
+3. `git push origin vX.Y.Z`
+
+`release_cut_*` now performs the full local release cut in one step:
+
+- checks that the worktree is clean before starting
+- bumps `pyproject.toml` and `docs/source/conf.py` together
+- refreshes `pdm.lock`
+- runs tests, docs, and build validation through `pdm run release_check`
+- creates the release commit
+- creates the annotated `vX.Y.Z` tag
 
 Pushing a `v*` tag triggers `.github/workflows/release.yml`, which:
 

@@ -8,6 +8,7 @@ carry release metadata for this project.
 from __future__ import annotations
 
 import re
+from collections.abc import Collection
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -20,6 +21,31 @@ class VersionFiles:
 
     pyproject: Path
     docs_conf: Path
+
+
+def build_release_tag(version: str) -> str:
+    """Build the annotated Git tag name for a release.
+
+    Args:
+        version: Semantic version in ``X.Y.Z`` form.
+
+    Returns:
+        Git tag name in ``vX.Y.Z`` form.
+    """
+    parse_version(version)
+    return f"v{version}"
+
+
+def build_release_commit_message(version: str) -> str:
+    """Build the release commit message for a version.
+
+    Args:
+        version: Semantic version in ``X.Y.Z`` form.
+
+    Returns:
+        Commit message in ``Release vX.Y.Z`` form.
+    """
+    return f"Release {build_release_tag(version)}"
 
 
 def parse_version(version: str) -> tuple[int, int, int]:
@@ -135,3 +161,25 @@ def write_release_version(version: str, files: VersionFiles) -> None:
         path=files.docs_conf,
     )
     files.docs_conf.write_text(docs_conf_updated, encoding="utf-8")
+
+
+def find_unexpected_worktree_changes(
+    status_output: str, allowed_paths: Collection[str]
+) -> list[str]:
+    """Return Git status entries that fall outside an allowed path set.
+
+    Args:
+        status_output: Raw ``git status --short`` output.
+        allowed_paths: Repository-relative paths that may be modified.
+
+    Returns:
+        Unexpected non-empty status lines.
+    """
+    unexpected: list[str] = []
+    for line in status_output.splitlines():
+        if not line.strip():
+            continue
+        path = line[3:].strip()
+        if path not in allowed_paths:
+            unexpected.append(line.strip())
+    return unexpected

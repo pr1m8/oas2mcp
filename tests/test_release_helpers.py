@@ -8,7 +8,10 @@ import pytest
 
 from oas2mcp._release import (
     VersionFiles,
+    build_release_commit_message,
+    build_release_tag,
     bump_version,
+    find_unexpected_worktree_changes,
     parse_version,
     read_current_version,
     write_release_version,
@@ -26,6 +29,23 @@ def test_bump_version_updates_requested_part() -> None:
     assert bump_version("0.1.4", "patch") == "0.1.5"
     assert bump_version("0.1.4", "minor") == "0.2.0"
     assert bump_version("0.1.4", "major") == "1.0.0"
+
+
+def test_release_git_metadata_is_derived_from_version() -> None:
+    """Release commit and tag names should stay in sync with the version."""
+    assert build_release_tag("0.1.8") == "v0.1.8"
+    assert build_release_commit_message("0.1.8") == "Release v0.1.8"
+
+
+def test_find_unexpected_worktree_changes_filters_allowed_paths() -> None:
+    """Only unrelated worktree changes should block the release helper."""
+    status = " M pyproject.toml\n M docs/source/conf.py\n?? README.md\n"
+    unexpected = find_unexpected_worktree_changes(
+        status,
+        allowed_paths={"pyproject.toml", "docs/source/conf.py"},
+    )
+
+    assert unexpected == ["?? README.md"]
 
 
 def test_write_release_version_updates_tracked_files(tmp_path: Path) -> None:

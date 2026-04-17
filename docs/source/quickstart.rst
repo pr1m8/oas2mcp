@@ -98,3 +98,30 @@ Build or deploy with the LangGraph CLI:
 
    pdm run langgraph build --config config/langgraph.json -t oas2mcp
    pdm run langgraph deploy --config config/langgraph.json
+
+Release workflow
+----------------
+
+Cut the next local release in one command:
+
+.. code-block:: bash
+
+   pdm run release_cut_patch
+
+You can replace ``patch`` with ``minor`` or ``major``. The helper:
+
+- requires a clean worktree before starting
+- updates the tracked version files together
+- refreshes ``pdm.lock``
+- runs ``pdm run release_check``
+- creates the release commit
+- creates the annotated ``vX.Y.Z`` tag
+
+Push the commit and tag explicitly after the helper succeeds:
+
+.. code-block:: bash
+
+   git push origin main
+   git push origin vX.Y.Z
+
+Pushing the tag triggers ``.github/workflows/release.yml``.

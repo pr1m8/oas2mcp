@@ -31,8 +31,8 @@ jobs:
           python --version
           pdm --version
 
-      - name: Disable uv-backed installer in CI
-        run: pdm config use_uv false
+      - name: Enable uv-backed installer in CI
+        run: pdm config use_uv true
 
       - name: Install project dependencies
         run: |
