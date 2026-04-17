@@ -23,6 +23,8 @@ Examples:
 
 from oas2mcp.loaders.openapi import (
     dump_openapi_spec,
+    load_openapi_spec,
+    load_openapi_spec_dict,
     load_openapi_spec_dict_from_file,
     load_openapi_spec_dict_from_text,
     load_openapi_spec_dict_from_url,
@@ -33,6 +35,8 @@ from oas2mcp.loaders.openapi import (
 
 __all__ = [
     "dump_openapi_spec",
+    "load_openapi_spec",
+    "load_openapi_spec_dict",
     "load_openapi_spec_dict_from_file",
     "load_openapi_spec_dict_from_text",
     "load_openapi_spec_dict_from_url",
