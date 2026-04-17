@@ -6,31 +6,61 @@
 [![Python versions](https://img.shields.io/pypi/pyversions/oas2mcp.svg)](https://pypi.org/project/oas2mcp/)
 [![License](https://img.shields.io/pypi/l/oas2mcp.svg)](https://github.com/pr1m8/oas2mcp/blob/main/LICENSE)
 
-Turn an OpenAPI spec into a cleaner MCP-oriented surface.
+Turn an OpenAPI spec into an inspectable, agent-refined MCP surface.
 
-`oas2mcp` loads and normalizes OpenAPI, classifies operations into deterministic MCP hints, adds catalog- and operation-level semantic refinement, exports inspectable JSON artifacts, and bootstraps a FastMCP server from the original spec plus exported metadata.
+`oas2mcp` is not a raw OpenAPI-to-MCP mirror. It combines deterministic normalization and classification with a small agent pipeline that improves naming, descriptions, prompt surfaces, and shared server ergonomics before exporting artifacts for FastMCP bootstrap or LangGraph deployment.
+
+## What the agents do
+
+The repo now has three distinct agent stages, each with a narrow role:
+
+- `catalog summarizer`: understands the API as a whole, including domains, authentication shape, and read/write patterns
+- `operation enhancer`: refines one operation at a time for titles, descriptions, tool vs resource semantics, confirmation notes, and prompt templates
+- `catalog surface planner`: designs the shared MCP layer, including catalog prompts, shared resources, and server instructions
+
+The orchestrator keeps these stages deterministic and ordered:
+
+1. load and normalize the source spec
+2. classify deterministic MCP hints
+3. summarize the catalog once
+4. enhance each operation
+5. plan the shared surface once
+6. export inspectable artifacts
+7. bootstrap FastMCP or expose the flow through LangGraph
 
 ## Why this exists
 
-Raw OpenAPI-to-MCP conversion is useful for bootstrapping, but it usually produces a surface that is too literal.
+Plain OpenAPI bootstrapping is good for speed, but usually too literal for real MCP use. `oas2mcp` adds the semantic middle layer that OpenAPI specs usually lack:
 
-`oas2mcp` is built to add the missing middle layer:
+- stable internal models
+- deterministic candidate generation
+- better tool, resource, and resource-template framing
+- shared prompt and resource planning
+- exported metadata you can inspect, diff, and reuse
+- deployable graph wrappers around the same pipeline
 
-- normalize the source API into typed internal models
-- classify likely tools, resources, and resource templates deterministically
-- summarize the API at the catalog level
-- refine operations one at a time for naming, descriptions, and prompt templates
-- export artifacts you can inspect, diff, and reuse
-- bootstrap FastMCP with exported route and naming overrides
+## Supported source inputs
+
+The loader accepts common OpenAPI forms directly:
+
+- remote URLs such as `https://example.com/openapi.json`
+- local files such as `openapi.yaml` or `specs/petstore.json`
+- `file://` URIs
+- raw JSON or YAML text
+- Swagger 2.0 / OpenAPI 2 documents, normalized into the internal catalog model
 
 ## What you get
 
-- Typed OpenAPI loading and normalization
-- Deterministic MCP candidate generation
-- Exported enhanced catalog artifacts under `data/exports/`
-- FastMCP bootstrap that respects exported `final_kind` metadata
-- Explicit prompt registration for exported prompt templates
-- Formal pytest coverage for normalization, export helpers, orchestrator flow, and FastMCP e2e
+- typed OpenAPI loading and normalization
+- deterministic MCP candidate generation
+- three focused agent layers instead of one monolithic agent
+- exported artifacts under `data/exports/`
+- FastMCP bootstrap with name and kind overrides from exported metadata
+- deployable LangGraph wrappers for the in-memory and export flows
+- LangSmith tracing support for agent and deployment runs
+- pytest coverage for normalization, export logic, FastMCP e2e behavior, and LangGraph deployment wrappers
+
+By default, generated JSON stays under `data/exports/`. Root-level snapshot files are now opt-in only.
 
 ## Install
 
@@ -43,27 +73,23 @@ pip install oas2mcp
 For local development:
 
 ```bash
-pdm install -G test -G docs
+pdm install -G test -G docs -G cli
 ```
 
 ## Example usage
 
-### 1. Load and inspect an OpenAPI spec
+### 1. Load and inspect a local or remote spec
 
 ```python
 from rich.console import Console
 
-from oas2mcp import (
-    classify_catalog,
-    load_openapi_spec_dict_from_url,
-    render_catalog_summary,
-    spec_dict_to_catalog,
-)
+from oas2mcp import classify_catalog, load_openapi_spec_dict, render_catalog_summary
+from oas2mcp.normalize.spec_to_catalog import spec_dict_to_catalog
 
-source_url = "https://petstore3.swagger.io/api/v3/openapi.json"
+source = "openapi.yaml"
 
-spec_dict = load_openapi_spec_dict_from_url(source_url)
-catalog = spec_dict_to_catalog(spec_dict, source_uri=source_url)
+spec_dict = load_openapi_spec_dict(source)
+catalog = spec_dict_to_catalog(spec_dict, source_uri=source)
 bundle = classify_catalog(catalog)
 
 print(catalog.name)
@@ -73,25 +99,30 @@ print(f"candidates: {len(bundle.candidates)}")
 render_catalog_summary(catalog, console=Console())
 ```
 
-### 2. Run the full summarize -> enhance -> export pipeline
+### 2. Run the full agent pipeline and export artifacts
 
-This path requires `OPENAI_API_KEY` because it runs the catalog summarizer and operation enhancer agents.
+This path requires `OPENAI_API_KEY`.
 
 ```python
 from oas2mcp.agent.orchestrator import run_and_export_oas2mcp_pipeline
 from oas2mcp.agent.runtime import Oas2McpRuntimeContext
+from oas2mcp.generate.config import ExportConfig
 
-source_url = "https://petstore3.swagger.io/api/v3/openapi.json"
+source = "openapi.yaml"
 
 outputs = run_and_export_oas2mcp_pipeline(
-    source_url=source_url,
+    source=source,
     runtime_context=Oas2McpRuntimeContext(
-        source_uri=source_url,
+        source_uri=source,
         project_name="petstore-mcp",
-        user_goal="Create exported artifacts for FastMCP bootstrap.",
+        user_goal="Produce a clean MCP surface for deployment.",
         output_style="compact",
         include_mcp_recommendations=True,
         include_risk_notes=False,
+    ),
+    export_config=ExportConfig(
+        export_dir="data/exports",
+        write_root_snapshot=False,
     ),
 )
 
@@ -101,45 +132,78 @@ for name, path in outputs.items():
 
 Typical outputs:
 
-- `<catalog-slug>_enhanced_catalog.json`
-- `<catalog-slug>_operation_notes.json`
-- `<catalog-slug>_fastmcp_config.json`
-- optional root snapshot: `<catalog-slug>.enhanced.json`
+- `data/exports/<catalog-slug>_enhanced_catalog.json`
+- `data/exports/<catalog-slug>_operation_notes.json`
+- `data/exports/<catalog-slug>_surface_plan.json`
+- `data/exports/<catalog-slug>_fastmcp_config.json`
 
-### 3. Bootstrap a FastMCP server from exported artifacts
+### 3. Bootstrap FastMCP from exported artifacts
 
 ```python
 from oas2mcp.generate.fastmcp_app import (
     build_fastmcp_from_exported_artifacts,
     register_exported_prompts,
+    register_exported_resources,
 )
 
-source_url = "https://petstore3.swagger.io/api/v3/openapi.json"
-config_path = "data/exports/swagger-petstore-openapi-3-0_fastmcp_config.json"
+source = "openapi.yaml"
+config_path = "data/exports/example-api_fastmcp_config.json"
 
 mcp = build_fastmcp_from_exported_artifacts(
-    source_url=source_url,
+    source=source,
     fastmcp_config_path=config_path,
 )
+register_exported_resources(mcp, config_path)
 register_exported_prompts(mcp, config_path)
 mcp.run(transport="http", port=8000)
 ```
 
-The bootstrap layer now respects:
+The bootstrap layer respects:
 
-- exported OpenAPI `operationId` name overrides
+- exported name overrides keyed by OpenAPI `operationId`
 - exported `final_kind` routing for tool vs resource vs resource template
-- exported prompt templates registered explicitly on the server
+- catalog-level prompts and resources from the surface planner
+- server instructions derived from the shared surface plan
+
+## LangGraph and LangSmith deployment
+
+The repo includes deployable LangGraph wrappers in [src/oas2mcp/deploy/langgraph_app.py](src/oas2mcp/deploy/langgraph_app.py) and a deployment config at [config/langgraph.json](config/langgraph.json).
+
+The two exposed graphs are:
+
+- `enhance_catalog`: runs the in-memory summarize -> enhance -> surface-plan flow and returns enhanced catalog JSON
+- `enhance_and_export_catalog`: runs the export flow and returns written artifact paths
+
+Run the local LangGraph dev server:
+
+```bash
+pdm run langgraph dev -c config/langgraph.json
+```
+
+Validate the deployment config:
+
+```bash
+pdm run langgraph validate -c config/langgraph.json
+```
+
+Build or deploy:
+
+```bash
+pdm run langgraph build -c config/langgraph.json -t oas2mcp
+pdm run langgraph deploy -c config/langgraph.json
+```
+
+`langgraph deploy` reads `LANGSMITH_API_KEY` from `.env`. The config is pinned to Python 3.13 so deployment matches the package runtime.
 
 ## Environment
 
-Copy the example env file if you want agent-driven flows or live upstream FastMCP calls:
+Copy the example env file:
 
 ```bash
 cp .env.example .env
 ```
 
-Required for summarizer and enhancer flows:
+Required for agent-driven flows:
 
 - `OPENAI_API_KEY`
 
@@ -158,29 +222,29 @@ Optional for live upstream FastMCP checks:
 - `UPSTREAM_API_KEY`
 - `UPSTREAM_API_KEY_HEADER`
 
-## Current status
+## Verification
 
-- Deterministic parsing, normalization, classification, and export helpers are covered by pytest.
-- FastMCP bootstrap is covered by an in-process e2e test that invokes tools, resources, resource templates, and prompts.
-- The docs build runs in strict mode with `-W --keep-going`.
-- Agent-driven summarizer and enhancer flows are still best treated as integration-style checks rather than pure unit tests.
-
-## Local verification
-
-Run the formal test suite:
+Formal test coverage:
 
 ```bash
 pdm run pytest
 ```
 
-Run the strict docs build:
+The current suite covers:
+
+- loader and normalization behavior
+- deterministic export logic
+- FastMCP in-process e2e behavior
+- LangGraph wrapper behavior
+
+Docs build:
 
 ```bash
 rm -rf docs/source/autoapi docs/_build
 pdm run sphinx-build -b html -W --keep-going docs/source docs/_build/html
 ```
 
-Manual smoke checks remain available for interactive inspection:
+Manual smoke checks:
 
 ```bash
 pdm run python scripts/test_catalog_surface_planner_agent.py
@@ -190,37 +254,6 @@ pdm run python scripts/test_fastmcp_server.py
 pdm run python scripts/test_fastmcp_client.py
 ```
 
-## LangGraph deployment
-
-The repo now includes a root-level `langgraph.json` and deployable graph entrypoints in
-`src/oas2mcp/deploy/langgraph_app.py`.
-
-Install the CLI group:
-
-```bash
-pdm install -G cli
-```
-
-Run the LangGraph dev server locally:
-
-```bash
-pdm run langgraph dev -c langgraph.json
-```
-
-The configured graphs are:
-
-- `enhance_catalog`: runs the in-memory summarize/enhance/surface-planning pipeline and returns the enhanced catalog JSON
-- `enhance_and_export_catalog`: runs the export pipeline and returns the written artifact paths
-
-For deployment to LangSmith Deployments:
-
-```bash
-pdm run langgraph build -c langgraph.json -t oas2mcp
-pdm run langgraph deploy -c langgraph.json
-```
-
-`langgraph deploy` can read the API key from `.env` via `LANGSMITH_API_KEY`.
-
 ## Project layout
 
 ```text
@@ -228,21 +261,20 @@ src/oas2mcp/
   loaders/       Fetch and parse OpenAPI sources
   normalize/     Convert raw specs into normalized models
   classify/      Deterministic MCP candidate generation
-  agent/         Summarizer, enhancer, runtime, and orchestration
+  agent/         Summarizer, enhancer, surface planner, runtime, orchestration
+  deploy/        LangGraph deployment wrappers around the orchestrator
   generate/      Artifact export and FastMCP bootstrap
-tests/           Formal unit and end-to-end coverage
+tests/           Unit and end-to-end coverage
 scripts/         Manual smoke runners and local inspection helpers
+config/          Deployment config such as LangGraph
 docs/            Sphinx documentation published through Read the Docs
 ```
 
 ## Documentation and release
 
-- Docs: `docs/source/`, published via Read the Docs
+- docs source: `docs/source/`
 - CI: `.github/workflows/ci.yml`
-- Docs validation: `.github/workflows/docs.yml`
+- docs validation: `.github/workflows/docs.yml`
 - PyPI release: `.github/workflows/release.yml`
 
-The release workflow is wired for GitHub Releases plus trusted publishing to PyPI.
-
-If you have not configured a PyPI trusted publisher yet, add a repository secret
-named `PYPI_API_TOKEN` and the same workflow will publish with a token instead.
+The release workflow supports GitHub Releases plus trusted publishing to PyPI. If you have not configured a PyPI trusted publisher yet, add a repository secret named `PYPI_API_TOKEN` and the same workflow can publish with a token instead.
