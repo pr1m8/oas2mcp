@@ -218,6 +218,7 @@ def example_enhanced_catalog(example_summary: CatalogSummary) -> EnhancedCatalog
         source_url=EXAMPLE_SOURCE_URI,
         catalog_name="Example API",
         catalog_slug="example-api",
+        catalog_version="1.0.0",
         summary=example_summary,
         operations=[
             OperationEnhancement(
@@ -228,12 +229,20 @@ def example_enhanced_catalog(example_summary: CatalogSummary) -> EnhancedCatalog
                 namespace="store",
                 title="Get inventory",
                 description="Return inventory counts by status.",
-                resource_uri="openapi://example-api/operation/inventory",
+                component_name="inventory",
+                resource_uri="openapi://example-api/inventory",
+                component_tags=["store", "read"],
+                component_meta={"generated_by": "fixture"},
                 prompt_templates=[
                     EnhancementPromptCandidate(
                         name="view_inventory",
                         title="View inventory",
                         description="Summarize the current inventory counts.",
+                        template=(
+                            "Summarize the current inventory counts.\n"
+                            "User goal: {user_goal}"
+                        ),
+                        arguments=["user_goal"],
                     )
                 ],
             ),
@@ -241,17 +250,22 @@ def example_enhanced_catalog(example_summary: CatalogSummary) -> EnhancedCatalog
                 operation_key="GET /orders/{orderId}",
                 operation_id="getOrderById",
                 operation_slug="getorderbyid",
-                final_kind="resource",
+                final_kind="resource_template",
                 namespace="store",
                 title="Get order by ID",
                 description="Return a single order by its identifier.",
-                resource_uri="openapi://example-api/operation/order_details",
+                component_name="order_details",
+                resource_uri="openapi://example-api/orders/{orderId}",
+                component_tags=["store", "read"],
                 prompt_templates=[
                     EnhancementPromptCandidate(
                         name="lookup_order",
                         title="Look up order",
                         description="Prepare a lookup for a single order.",
                         arguments=["orderId"],
+                        template=(
+                            "Prepare a lookup for one order.\n" "Order ID: {orderId}"
+                        ),
                     )
                 ],
             ),
@@ -274,6 +288,7 @@ def example_enhanced_catalog(example_summary: CatalogSummary) -> EnhancedCatalog
                 title="Create pet",
                 description="Create a pet record.",
                 tool_name="create_pet",
+                component_tags=["pet", "write"],
                 requires_confirmation=True,
                 prompt_templates=[
                     EnhancementPromptCandidate(
@@ -281,6 +296,7 @@ def example_enhanced_catalog(example_summary: CatalogSummary) -> EnhancedCatalog
                         title="Draft pet creation",
                         description="Draft a pet creation request.",
                         arguments=["name"],
+                        template="Draft a pet creation request for {name}.",
                     )
                 ],
             ),

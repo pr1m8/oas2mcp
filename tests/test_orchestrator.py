@@ -9,6 +9,7 @@ from oas2mcp.agent.orchestrator import (
     run_oas2mcp_pipeline,
 )
 from oas2mcp.agent.runtime import Oas2McpRuntimeContext
+from oas2mcp.agent.surface.models import CatalogSurfacePlan
 from oas2mcp.generate.config import ExportConfig
 
 
@@ -22,12 +23,19 @@ def test_run_oas2mcp_pipeline_builds_enhanced_catalog(
     recorded_operation_ids: list[str | None] = []
 
     monkeypatch.setattr(
-        "oas2mcp.agent.orchestrator.load_openapi_spec_dict_from_url",
-        lambda source_url: example_openapi_spec,
+        "oas2mcp.agent.orchestrator.load_openapi_spec_dict",
+        lambda source: example_openapi_spec,
     )
     monkeypatch.setattr(
         "oas2mcp.agent.orchestrator.run_catalog_summarizer",
         lambda **kwargs: example_summary,
+    )
+    monkeypatch.setattr(
+        "oas2mcp.agent.orchestrator.run_catalog_surface_planner",
+        lambda **kwargs: CatalogSurfacePlan(
+            server_instructions="Use the exported MCP surface.",
+            notes=["planner-ran"],
+        ),
     )
 
     enhancement_by_id = {
@@ -52,13 +60,16 @@ def test_run_oas2mcp_pipeline_builds_enhanced_catalog(
     )
 
     enhanced_catalog = run_oas2mcp_pipeline(
-        source_url="https://example.com/openapi.json",
+        source="https://example.com/openapi.json",
         runtime_context=runtime_context,
     )
 
     assert enhanced_catalog.catalog_name == "Example API"
     assert enhanced_catalog.catalog_slug == "example-api"
+    assert enhanced_catalog.catalog_version == "1.0.0"
     assert enhanced_catalog.summary == example_summary
+    assert enhanced_catalog.surface_plan is not None
+    assert enhanced_catalog.surface_plan.notes == ["planner-ran"]
     assert recorded_operation_ids == [
         "getInventory",
         "getOrderById",
@@ -82,12 +93,19 @@ def test_run_and_export_oas2mcp_pipeline_writes_expected_artifacts(
 ) -> None:
     """The export wrapper should write enhanced catalog artifacts to disk."""
     monkeypatch.setattr(
-        "oas2mcp.agent.orchestrator.load_openapi_spec_dict_from_url",
-        lambda source_url: example_openapi_spec,
+        "oas2mcp.agent.orchestrator.load_openapi_spec_dict",
+        lambda source: example_openapi_spec,
     )
     monkeypatch.setattr(
         "oas2mcp.agent.orchestrator.run_catalog_summarizer",
         lambda **kwargs: example_summary,
+    )
+    monkeypatch.setattr(
+        "oas2mcp.agent.orchestrator.run_catalog_surface_planner",
+        lambda **kwargs: CatalogSurfacePlan(
+            server_instructions="Use the exported MCP surface.",
+            notes=["planner-ran"],
+        ),
     )
 
     enhancement_by_id = {
@@ -111,7 +129,7 @@ def test_run_and_export_oas2mcp_pipeline_writes_expected_artifacts(
     )
 
     outputs = run_and_export_oas2mcp_pipeline(
-        source_url="https://example.com/openapi.json",
+        source="https://example.com/openapi.json",
         runtime_context=runtime_context,
         export_config=export_config,
     )
@@ -119,6 +137,7 @@ def test_run_and_export_oas2mcp_pipeline_writes_expected_artifacts(
     assert set(outputs) == {
         "enhanced_catalog",
         "operation_notes",
+        "surface_plan",
         "fastmcp_config",
     }
     for path in outputs.values():
@@ -127,3 +146,4 @@ def test_run_and_export_oas2mcp_pipeline_writes_expected_artifacts(
     fastmcp_config = json.loads(outputs["fastmcp_config"].read_text(encoding="utf-8"))
     assert fastmcp_config["catalog_name"] == "Example API"
     assert fastmcp_config["mcp_names"]["getInventory"] == "inventory"
+    assert fastmcp_config["surface_notes"] == ["planner-ran"]

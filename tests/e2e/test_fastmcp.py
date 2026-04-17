@@ -11,6 +11,7 @@ from oas2mcp.generate.export import build_fastmcp_config
 from oas2mcp.generate.fastmcp_app import (
     build_fastmcp_from_exported_artifacts,
     register_exported_prompts,
+    register_exported_resources,
 )
 
 
@@ -28,14 +29,15 @@ def test_fastmcp_bootstrap_supports_tool_resource_template_and_prompt_invocation
 
     monkeypatch.setattr(
         "oas2mcp.generate.fastmcp_app.fetch_openapi_spec",
-        lambda source_url, timeout=30.0: example_openapi_spec,
+        lambda source, timeout=30.0: example_openapi_spec,
     )
 
     mcp = build_fastmcp_from_exported_artifacts(
-        source_url="https://example.com/openapi.json",
+        source="https://example.com/openapi.json",
         fastmcp_config_path=config_path,
         client=upstream_client,
     )
+    register_exported_resources(mcp, config_path)
     register_exported_prompts(mcp, config_path)
 
     async def run() -> None:
@@ -50,19 +52,54 @@ def test_fastmcp_bootstrap_supports_tool_resource_template_and_prompt_invocation
             prompt_names = {prompt.name for prompt in await client.list_prompts()}
 
             assert tool_names == {"create_pet", "pet_by_id"}
-            assert resource_names == {"inventory"}
-            assert template_names == {"order_details"}
+            assert resource_names == {
+                "catalog_summary",
+                "inventory",
+                "prompt_index",
+            }
+            assert template_names == {
+                "namespace_operations",
+                "operation_metadata",
+                "order_details",
+            }
             assert prompt_names == {
+                "browse_namespace",
+                "catalog_overview",
+                "compare_operations",
+                "plan_operation",
+                "select_operation",
                 "draft_pet_creation",
                 "lookup_order",
                 "view_inventory",
             }
 
-            inventory = await client.read_resource("resource://inventory")
+            summary = await client.read_resource(
+                "oas2mcp://example-api/catalog/summary"
+            )
+            assert '"catalog_slug": "example-api"' in _resource_text(summary)
+
+            prompt_index = await client.read_resource(
+                "oas2mcp://example-api/catalog/prompts"
+            )
+            assert '"catalog_prompts"' in _resource_text(prompt_index)
+
+            inventory = await client.read_resource("openapi://example-api/inventory")
             assert '"available": 3' in _resource_text(inventory)
 
-            order = await client.read_resource("resource://order_details/42")
+            order = await client.read_resource("openapi://example-api/orders/42")
             assert '"id": "42"' in _resource_text(order)
+
+            operation_metadata = await client.read_resource(
+                "oas2mcp://example-api/operations/getorderbyid"
+            )
+            assert '"operation_id": "getOrderById"' in _resource_text(
+                operation_metadata
+            )
+
+            namespace_operations = await client.read_resource(
+                "oas2mcp://example-api/namespaces/store/operations"
+            )
+            assert '"namespace": "store"' in _resource_text(namespace_operations)
 
             pet = await client.call_tool("pet_by_id", {"petId": "7"})
             assert pet.structured_content["id"] == "7"
