@@ -1,0 +1,9 @@
+{
+  "python_version": "3.13",
+  "dependencies": [".."],
+  "graphs": {
+    "enhance_catalog": "../src/oas2mcp/deploy/langgraph_app.py:enhance_catalog_graph",
+    "enhance_and_export_catalog": "../src/oas2mcp/deploy/langgraph_app.py:enhance_and_export_catalog_graph"
+  },
+  "env": "../.env"
+}
