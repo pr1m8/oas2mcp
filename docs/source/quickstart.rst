@@ -6,7 +6,7 @@ Install
 
 .. code-block:: bash
 
-   pdm install -G test -G docs
+   pdm install -G test -G docs -G cli
 
 Environment
 -----------
@@ -17,7 +17,7 @@ Copy the example env file and set the values you need:
 
    cp .env.example .env
 
-Required for agent-driven summarizer and enhancer runs:
+Required for the agent pipeline:
 
 - ``OPENAI_API_KEY``
 
@@ -59,8 +59,9 @@ Formal coverage now lives in ``tests/``. The scripts remain available for intera
 LangGraph deployment
 --------------------
 
-The repository includes a root-level ``langgraph.json`` and deployable graph
-entrypoints in ``src/oas2mcp/deploy/langgraph_app.py``.
+The repository includes deployable graph entrypoints in
+``src/oas2mcp/deploy/langgraph_app.py`` and a deployment config at
+``config/langgraph.json``.
 
 Install the CLI group:
 
@@ -72,16 +73,22 @@ Run the LangGraph dev server locally:
 
 .. code-block:: bash
 
-   pdm run langgraph dev -c langgraph.json
+   pdm run langgraph dev -c config/langgraph.json
 
 The configured graphs are:
 
 - ``enhance_catalog`` for the in-memory summarize/enhance/surface-planning pipeline
 - ``enhance_and_export_catalog`` for the export pipeline that returns written artifact paths
 
+Validate the deployment config:
+
+.. code-block:: bash
+
+   pdm run langgraph validate -c config/langgraph.json
+
 Build or deploy with the LangGraph CLI:
 
 .. code-block:: bash
 
-   pdm run langgraph build -c langgraph.json -t oas2mcp
-   pdm run langgraph deploy -c langgraph.json
+   pdm run langgraph build -c config/langgraph.json -t oas2mcp
+   pdm run langgraph deploy -c config/langgraph.json

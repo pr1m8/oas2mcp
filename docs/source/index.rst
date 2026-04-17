@@ -5,7 +5,7 @@ oas2mcp
 
    <div class="hero-title">OpenAPI to MCP, with typed Python generation</div>
    <div class="hero-subtitle">
-     Convert OpenAPI specifications into MCP-friendly Python tooling and server scaffolding.
+     Convert OpenAPI specifications into MCP-friendly Python tooling, agent-refined exports, and deployable server surfaces.
    </div>
 
 .. grid:: 1 1 2 2
@@ -37,7 +37,7 @@ oas2mcp
 
 .. note::
 
-   ``oas2mcp`` is built for typed, inspectable OpenAPI-to-MCP workflows with a Python-first developer experience.
+   ``oas2mcp`` is built for typed, inspectable OpenAPI-to-MCP workflows with deterministic parsing, focused agent refinement, and deployable outputs.
 
 Highlights
 ----------
@@ -59,6 +59,11 @@ Highlights
       :class-card: sd-shadow-sm
 
       Auto-generated reference docs powered by AutoAPI.
+
+   .. grid-item-card:: Agent pipeline
+      :class-card: sd-shadow-sm
+
+      Catalog summarizer, operation enhancer, and shared surface planner stages.
 
 .. toctree::
    :maxdepth: 2
