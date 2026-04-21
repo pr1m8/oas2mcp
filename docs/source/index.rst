@@ -3,9 +3,9 @@ oas2mcp
 
 .. raw:: html
 
-   <div class="hero-title">OpenAPI to MCP, with typed Python generation</div>
+   <div class="hero-title">OpenAPI to agent-refined MCP</div>
    <div class="hero-subtitle">
-     Convert OpenAPI specifications into MCP-friendly Python tooling, agent-refined exports, and deployable server surfaces.
+     Convert OpenAPI and Swagger specifications into AI-refined FastMCP and LangGraph server surfaces.
    </div>
 
 .. grid:: 1 1 2 2
@@ -37,7 +37,7 @@ oas2mcp
 
 .. note::
 
-   ``oas2mcp`` is built for typed, inspectable OpenAPI-to-MCP workflows with deterministic parsing, focused agent refinement, and deployable outputs.
+   ``oas2mcp`` is built for typed, inspectable OpenAPI-to-MCP workflows with deterministic parsing, focused AI agent refinement, FastMCP bootstrap artifacts, and LangGraph deployment wrappers.
 
 Highlights
 ----------
@@ -60,10 +60,15 @@ Highlights
 
       Auto-generated reference docs powered by AutoAPI.
 
-   .. grid-item-card:: Agent pipeline
+   .. grid-item-card:: Agent system
       :class-card: sd-shadow-sm
 
       Catalog summarizer, operation enhancer, and shared surface planner stages.
+
+   .. grid-item-card:: Deployable outputs
+      :class-card: sd-shadow-sm
+
+      FastMCP bootstrap config, LangGraph entrypoints, and LangSmith tracing hooks.
 
 .. toctree::
    :maxdepth: 2

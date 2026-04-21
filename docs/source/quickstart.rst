@@ -4,6 +4,14 @@ Quickstart
 Install
 -------
 
+For package usage:
+
+.. code-block:: bash
+
+   pip install oas2mcp
+
+For local development:
+
 .. code-block:: bash
 
    pdm install -G test -G docs -G cli
@@ -102,6 +110,10 @@ Build or deploy with the LangGraph CLI:
 Release workflow
 ----------------
 
+The publishing flow is tag-driven. The local helper cuts a verified release
+commit and annotated tag; the GitHub Actions release workflow then validates,
+builds, publishes to PyPI, and creates the GitHub Release.
+
 Cut the next local release in one command:
 
 .. code-block:: bash
@@ -124,4 +136,11 @@ Push the commit and tag explicitly after the helper succeeds:
    git push origin main
    git push origin vX.Y.Z
 
-Pushing the tag triggers ``.github/workflows/release.yml``.
+Pushing the tag triggers ``.github/workflows/release.yml``, which:
+
+- verifies the tag matches ``pyproject.toml``
+- runs tests
+- builds docs
+- builds distributions
+- publishes to PyPI
+- creates the GitHub Release and attaches ``dist/*``

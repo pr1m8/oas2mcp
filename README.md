@@ -6,61 +6,69 @@
 [![Python versions](https://img.shields.io/pypi/pyversions/oas2mcp.svg)](https://pypi.org/project/oas2mcp/)
 [![License](https://img.shields.io/pypi/l/oas2mcp.svg)](https://github.com/pr1m8/oas2mcp/blob/main/LICENSE)
 
-Turn an OpenAPI spec into an inspectable, agent-refined MCP surface.
+Turn OpenAPI and Swagger specs into AI-refined Model Context Protocol (MCP) server surfaces you can inspect, diff, deploy, and ship with FastMCP or LangGraph.
 
-`oas2mcp` is not a raw OpenAPI-to-MCP mirror. It combines deterministic normalization and classification with a small agent pipeline that improves naming, descriptions, prompt surfaces, and shared server ergonomics before exporting artifacts for FastMCP bootstrap or LangGraph deployment.
+`oas2mcp` is an agentic OpenAPI-to-MCP pipeline, not a raw route mirror. It loads common API specifications, normalizes them into typed internal models, classifies first-pass MCP candidates deterministically, then runs focused AI agent stages to improve names, descriptions, tool/resource semantics, prompt templates, shared resources, and server instructions.
 
-## What the agents do
+Raw OpenAPI bootstrapping is useful for speed, but it usually exposes an API exactly as it was documented for humans and SDKs. MCP servers need a stronger semantic layer: stable tool names, clear read/write boundaries, resource-style access for safe reads, useful prompts, confirmation notes, and deployment metadata that agents can rely on. `oas2mcp` builds that layer as inspectable artifacts before anything is served.
 
-The repo now has three distinct agent stages, each with a narrow role:
+## Pipeline at a glance
 
-- `catalog summarizer`: understands the API as a whole, including domains, authentication shape, and read/write patterns
-- `operation enhancer`: refines one operation at a time for titles, descriptions, tool vs resource semantics, confirmation notes, and prompt templates
-- `catalog surface planner`: designs the shared MCP layer, including catalog prompts, shared resources, and server instructions
+```text
+OpenAPI / Swagger source
+-> typed catalog normalization
+-> deterministic MCP candidate hints
+-> catalog summarizer agent
+-> per-operation enhancer agent
+-> catalog surface planner agent
+-> export JSON artifacts
+-> bootstrap FastMCP or deploy with LangGraph
+```
 
-The orchestrator keeps these stages deterministic and ordered:
+The result is a reusable MCP planning bundle rather than a one-off generated server. You can review the generated JSON, diff it in pull requests, feed it into FastMCP bootstrap, or run the same flow as deployable LangGraph entrypoints with LangSmith tracing.
 
-1. load and normalize the source spec
-2. classify deterministic MCP hints
-3. summarize the catalog once
-4. enhance each operation
-5. plan the shared surface once
-6. export inspectable artifacts
-7. bootstrap FastMCP or expose the flow through LangGraph
+## Why use it
 
-## Why this exists
+- Converts local files, remote URLs, `file://` URIs, raw JSON/YAML text, OpenAPI 3.x, and Swagger/OpenAPI 2.0 inputs into one typed catalog model.
+- Keeps deterministic parsing and classification separate from AI refinement so the pipeline stays debuggable and repeatable.
+- Uses three narrow agent stages instead of one vague "generate a server" prompt.
+- Produces tool, resource, resource-template, prompt, and server-instruction metadata for richer MCP surfaces.
+- Exports artifacts under `data/exports/` by default so generated state is easy to inspect and does not clutter the repository root.
+- Boots a FastMCP server from the original OpenAPI spec plus exported metadata, including name overrides and final tool/resource routing.
+- Provides LangGraph deployment wrappers and LangSmith tracing hooks for running the same refinement flow in production-style environments.
+- Includes tests for loader normalization, deterministic export logic, FastMCP behavior, and LangGraph wrappers.
 
-Plain OpenAPI bootstrapping is good for speed, but usually too literal for real MCP use. `oas2mcp` adds the semantic middle layer that OpenAPI specs usually lack:
+## The Agent System
 
-- stable internal models
-- deterministic candidate generation
-- better tool, resource, and resource-template framing
-- shared prompt and resource planning
-- exported metadata you can inspect, diff, and reuse
-- deployable graph wrappers around the same pipeline
+`oas2mcp` uses an explicit multi-agent refinement pipeline:
 
-## Supported source inputs
+- `catalog summarizer`: reads the whole API shape once and captures domains, authentication style, data model patterns, and read/write behavior.
+- `operation enhancer`: refines one operation at a time, improving titles, descriptions, final MCP kind, confirmation guidance, and prompt templates.
+- `catalog surface planner`: designs the shared MCP layer, including catalog-level prompts, resources, resource templates, and server instructions.
+- `orchestrator`: keeps the run deterministic by loading once, summarizing once, enhancing operations in order, planning the shared surface once, and exporting typed artifacts.
 
-The loader accepts common OpenAPI forms directly:
+This keeps the AI component useful but bounded. Agents improve semantics and ergonomics; deterministic code still owns loading, normalization, candidate generation, export paths, and bootstrap wiring.
+
+## Supported API Specs
+
+The loader accepts common API specification forms directly:
 
 - remote URLs such as `https://example.com/openapi.json`
-- local files such as `openapi.yaml` or `specs/petstore.json`
+- local files such as `openapi.yaml`, `openapi.json`, or `specs/petstore.yaml`
 - `file://` URIs
 - raw JSON or YAML text
 - Swagger 2.0 / OpenAPI 2 documents, normalized into the internal catalog model
 
-## What you get
+## Generated Outputs
 
-- typed OpenAPI loading and normalization
-- deterministic MCP candidate generation
-- three focused agent layers instead of one monolithic agent
-- exported artifacts under `data/exports/`
-- FastMCP bootstrap with name and kind overrides from exported metadata
-- deployable LangGraph wrappers for the in-memory and export flows
-- LangSmith tracing support for agent and deployment runs
-- pytest coverage for normalization, export logic, FastMCP e2e behavior, and LangGraph deployment wrappers
+Typical export artifacts include:
 
-By default, generated JSON stays under `data/exports/`. Root-level snapshot files are now opt-in only.
+- `data/exports/<catalog-slug>_enhanced_catalog.json`
+- `data/exports/<catalog-slug>_operation_notes.json`
+- `data/exports/<catalog-slug>_surface_plan.json`
+- `data/exports/<catalog-slug>_fastmcp_config.json`
+
+By default, generated JSON stays under `data/exports/`. Root-level snapshot files are opt-in only.
 
 ## Install
 
@@ -276,20 +284,20 @@ config/          Deployment config such as LangGraph
 docs/            Sphinx documentation published through Read the Docs
 ```
 
-## Documentation and release
+## Documentation and publishing
 
 - docs source: `docs/source/`
 - CI: `.github/workflows/ci.yml`
 - docs validation: `.github/workflows/docs.yml`
 - PyPI release: `.github/workflows/release.yml`
 
-The release path is now tag-driven and smoother:
+The publishing path is tag-driven. Local release helpers cut a verified release commit and annotated tag; GitHub Actions validates the tag, builds the package, publishes to PyPI, and creates the GitHub Release.
 
 1. `pdm run release_cut_patch` (or `release_cut_minor` / `release_cut_major`)
 2. `git push origin main`
 3. `git push origin vX.Y.Z`
 
-`release_cut_*` now performs the full local release cut in one step:
+`release_cut_*` performs the full local release cut in one step:
 
 - checks that the worktree is clean before starting
 - bumps `pyproject.toml` and `docs/source/conf.py` together
